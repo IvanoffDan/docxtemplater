@@ -27,7 +27,7 @@ then
 fi
 
 port4444used() {
-	netstat -tnlp 2>/dev/null | grep --color -E 4444 >/dev/null
+	netstat -anp tcp 2>/dev/null | grep --color -E 4444 >/dev/null
 }
 
 if [ "$BROWSER" != "SAUCELABS" ]
@@ -37,7 +37,7 @@ then
 		echo "Using existing selenium"
 	else
 		echo "Starting selenium"
-		selenium-standalone install --silent
+		selenium-standalone install
 		selenium-standalone start -- -log /tmp/protractor.log &
 		pid="$!"
 		while ! port4444used;
