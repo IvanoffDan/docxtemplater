@@ -2,6 +2,7 @@
 
 const { DOMParser, XMLSerializer } = require("xmldom");
 const { throwXmlTagNotFound } = require("./errors");
+const get = require("lodash/get");
 
 function parser(tag) {
 	return {
@@ -9,7 +10,7 @@ function parser(tag) {
 			if (tag === ".") {
 				return scope;
 			}
-			return scope[tag];
+			return get(scope, tag);
 		},
 	};
 }

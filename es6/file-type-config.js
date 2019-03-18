@@ -1,5 +1,6 @@
 "use strict";
 
+const checkboxTable = require("./modules/checkbox-table");
 const loopModule = require("./modules/loop");
 const spacePreserveModule = require("./modules/space-preserve");
 const rawXmlModule = require("./modules/rawxml");
@@ -98,6 +99,7 @@ const DocXFileTypeConfig = {
 	tagRawXml: "w:p",
 	tagTextXml: "w:t",
 	baseModules: [
+    checkboxTable,
 		loopModule,
 		spacePreserveModule,
 		expandPairTrait,
