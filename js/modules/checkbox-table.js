@@ -137,7 +137,7 @@ function processRow(_ref) {
   var row = [part];
   var rowEndIndex = index;
 
-  for (var i = index; i < postparsed.length; i++) {
+  for (var i = index + 1; i < postparsed.length; i++) {
     var currentPart = postparsed[i];
 
     if (!isTableRowEnd(currentPart)) {
