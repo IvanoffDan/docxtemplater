@@ -7,7 +7,7 @@
 /*.pptx
 /build
 /docs/build
-/js
+# /js
 /output.docx
 browser/*
 *.spec.js
