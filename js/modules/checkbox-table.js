@@ -189,16 +189,19 @@ function copyRow(row, iteration, currentLIndex, data) {
 }
 
 function convertToTemplaterTag(element, iteration, data) {
-  var value = "";
-
   if (get(data, [element.value, iteration])) {
-    value = "".concat(element.value, "[").concat(iteration, "]");
+    return _objectSpread({}, element, {
+      module: undefined,
+      value: "".concat(element.value, "[").concat(iteration, "]")
+    });
   }
 
-  return _objectSpread({}, element, {
-    module: undefined,
-    value: value
-  });
+  return {
+    lIndex: element.lIndex,
+    type: "content",
+    position: "outsidetag",
+    value: ""
+  };
 }
 
 function getRowChunks(parsed) {
@@ -229,7 +232,7 @@ function getTags(row) {
 function getNumberOfRows(tags, data) {
   return tags.reduce(function (max, v) {
     // TODO: Make this safe + add error handling
-    var length = data[v.value].length;
+    var length = get(data, [v.value, "length"], 0);
 
     if (length > max) {
       return length;

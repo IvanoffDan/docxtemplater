@@ -140,15 +140,19 @@ function copyRow(row, iteration, currentLIndex, data) {
 }
 
 function convertToTemplaterTag(element, iteration, data) {
-  let value = "";
   if (get(data, [element.value, iteration])) {
-    value = `${element.value}[${iteration}]`;
+    return {
+      ...element,
+      module: undefined,
+      value: `${element.value}[${iteration}]`,
+    };
   }
 
   return {
-    ...element,
-    module: undefined,
-    value,
+    lIndex: element.lIndex,
+    type: "content",
+    position: "outsidetag",
+    value: "",
   };
 }
 
@@ -182,7 +186,7 @@ function getTags(row) {
 function getNumberOfRows(tags, data) {
   return tags.reduce((max, v) => {
     // TODO: Make this safe + add error handling
-    const length = data[v.value].length;
+    const length = get(data, [v.value, "length"], 0);
 
     if (length > max) {
       return length;
