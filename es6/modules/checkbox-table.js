@@ -88,7 +88,7 @@ function processRow({postparsed, part, index, data}) {
   const row = [part];
   let rowEndIndex = index;
 
-  for (let i = index; i < postparsed.length; i++) {
+  for (let i = index + 1; i < postparsed.length; i++) {
     const currentPart = postparsed[i];
     if (!isTableRowEnd(currentPart)) {
       row.push(currentPart);
