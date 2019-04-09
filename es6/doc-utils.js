@@ -7,7 +7,7 @@ const get = require("lodash/get");
 function parser(tag) {
 	return {
 		["get"](scope) {
-			if (tag === ".") {
+			if (tag === "." || tag.match(/^\w+.item$/)) {
 				return scope;
 			}
 			return get(scope, tag);
