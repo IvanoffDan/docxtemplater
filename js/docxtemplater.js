@@ -236,11 +236,11 @@ function () {
     value: function render() {
       var _this4 = this;
 
-      this.compile();
       this.setModules({
         data: this.data,
         Lexer: Lexer
       });
+      this.compile();
       this.mapper = this.modules.reduce(function (value, module) {
         return module.getRenderedMap(value);
       }, {});
