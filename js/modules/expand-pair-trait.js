@@ -42,6 +42,7 @@ function getOpenCountChange(part) {
 }
 
 function getPairs(traits) {
+  console.log(traits);
   var errors = [];
   var pairs = [];
 
