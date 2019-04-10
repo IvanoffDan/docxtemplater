@@ -201,11 +201,13 @@ const Docxtemplater = class Docxtemplater {
 		return this;
 	}
 	render() {
-		this.compile();
-		this.setModules({
+    this.setModules({
 			data: this.data,
 			Lexer,
-		});
+    });
+
+		this.compile();
+
 		this.mapper = this.modules.reduce(function(value, module) {
 			return module.getRenderedMap(value);
 		}, {});
