@@ -280,9 +280,6 @@ function () {
     key: "setData",
     value: function setData(data) {
       this.data = data;
-      this.setModules({
-        data: this.data
-      });
       return this;
     }
   }, {

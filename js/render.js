@@ -55,7 +55,6 @@ function render(options) {
       return part.value;
     }
 
-    console.log(JSON.stringify(part));
     throwUnimplementedTagType(part, i);
   });
   return {

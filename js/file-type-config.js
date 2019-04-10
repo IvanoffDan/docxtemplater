@@ -1,5 +1,7 @@
 "use strict";
 
+var checkboxLoops = require("./modules/checkbox-loops");
+
 var checkboxTable = require("./modules/checkbox-table");
 
 var loopModule = require("./modules/loop");
@@ -67,7 +69,7 @@ var DocXFileTypeConfig = {
   }],
   tagRawXml: "w:p",
   tagTextXml: "w:t",
-  baseModules: [checkboxTable, loopModule, spacePreserveModule, expandPairTrait, rawXmlModule, render]
+  baseModules: [checkboxLoops, checkboxTable, loopModule, spacePreserveModule, expandPairTrait, rawXmlModule, render]
 };
 module.exports = {
   docx: DocXFileTypeConfig,

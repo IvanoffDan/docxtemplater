@@ -13,7 +13,7 @@ var _get = require("lodash/get");
 
 function parser(tag) {
   return _defineProperty({}, "get", function get(scope) {
-    if (tag === ".") {
+    if (tag === "." || tag.match(/^\w+.item$/)) {
       return scope;
     }
 
