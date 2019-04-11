@@ -166,7 +166,8 @@ function () {
   }, {
     key: "getListValue",
     value: function getListValue(tag) {
-      return get(this.scopeList, [0, tag, this.scopePathItem[this.scopePathItem.length - 1]], null);
+      // TODO: handle with null getter
+      return get(this.scopeList, [0, tag, this.scopePathItem[this.scopePathItem.length - 1]], "");
     }
   }, {
     key: "getValueAsync",
