@@ -114,7 +114,8 @@ const ScopeManager = class ScopeManager {
 		return getValue.call(this, tag, meta, num);
   }
   getListValue(tag) {
-    return get(this.scopeList, [0, tag, this.scopePathItem[this.scopePathItem.length - 1]], null);
+    // TODO: handle with null getter
+    return get(this.scopeList, [0, tag, this.scopePathItem[this.scopePathItem.length - 1]], "");
   }
 	getValueAsync(tag, meta) {
 		const num = this.scopeList.length - 1;
