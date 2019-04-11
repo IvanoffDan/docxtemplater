@@ -69,7 +69,7 @@ var DocXFileTypeConfig = {
   }],
   tagRawXml: "w:p",
   tagTextXml: "w:t",
-  baseModules: [checkboxLoops, checkboxTable, loopModule, spacePreserveModule, expandPairTrait, rawXmlModule, render]
+  baseModules: [checkboxTable, checkboxLoops, loopModule, spacePreserveModule, expandPairTrait, rawXmlModule, render]
 };
 module.exports = {
   docx: DocXFileTypeConfig,

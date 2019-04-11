@@ -9,6 +9,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 var _require = require("./errors"),
     getScopeParserExecutionError = _require.getScopeParserExecutionError;
 
+var get = require("lodash/get");
+
 function find(list, fn) {
   var length = list.length >>> 0;
   var value;
@@ -160,6 +162,11 @@ function () {
     value: function getValue(tag, meta) {
       var num = this.scopeList.length - 1;
       return _getValue.call(this, tag, meta, num);
+    }
+  }, {
+    key: "getListValue",
+    value: function getListValue(tag) {
+      return get(this.scopeList, [0, tag, this.scopePathItem[this.scopePathItem.length - 1]], null);
     }
   }, {
     key: "getValueAsync",
