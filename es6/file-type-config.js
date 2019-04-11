@@ -100,8 +100,8 @@ const DocXFileTypeConfig = {
 	tagRawXml: "w:p",
 	tagTextXml: "w:t",
 	baseModules: [
-    checkboxLoops,
     checkboxTable,
+    checkboxLoops,
 		loopModule,
 		spacePreserveModule,
 		expandPairTrait,

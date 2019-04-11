@@ -1,5 +1,6 @@
 "use strict";
 const { getScopeParserExecutionError } = require("./errors");
+const get = require("lodash/get");
 
 function find(list, fn) {
 	const length = list.length >>> 0;
@@ -111,7 +112,10 @@ const ScopeManager = class ScopeManager {
 	getValue(tag, meta) {
 		const num = this.scopeList.length - 1;
 		return getValue.call(this, tag, meta, num);
-	}
+  }
+  getListValue(tag) {
+    return get(this.scopeList, [0, tag, this.scopePathItem[this.scopePathItem.length - 1]], null);
+  }
 	getValueAsync(tag, meta) {
 		const num = this.scopeList.length - 1;
 		return getValueAsync.call(this, tag, meta, num);
