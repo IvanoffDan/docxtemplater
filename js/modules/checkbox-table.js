@@ -189,7 +189,7 @@ function copyRow(row, iteration, currentLIndex, data) {
 }
 
 function convertToTemplaterTag(element, iteration, data) {
-  if (get(data, [element.value, iteration])) {
+  if (get(data, [element.value, iteration]) !== undefined) {
     return _objectSpread({}, element, {
       module: undefined,
       value: "".concat(element.value, "[").concat(iteration, "]")
