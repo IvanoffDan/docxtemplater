@@ -30,6 +30,8 @@ function startTest() {
   require("./doc-props");
 
   require("./checkbox-table");
+
+  require("./checkbox-loops");
 }
 
 start();

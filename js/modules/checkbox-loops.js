@@ -154,9 +154,11 @@ function () {
 
       var totalValue = [];
       var errors = [];
+      var loopIndex = 0; // CBX
 
       function loopOver(scope, i) {
-        var scopeManager = options.scopeManager.createSubScopeManager(scope, part.value, i, part);
+        var scopeManager = options.scopeManager.createCheckboxLoopScopeManager(scope, part.value, i, part, loopIndex);
+        loopIndex++;
         var subRendered = options.render(mergeObjects({}, options, {
           compiled: part.subparsed,
           tags: {},

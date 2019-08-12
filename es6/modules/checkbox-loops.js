@@ -116,13 +116,16 @@ class LoopModule {
 		}
 		let totalValue = [];
 		let errors = [];
+		let loopIndex = 0; // CBX
 		function loopOver(scope, i) {
-			const scopeManager = options.scopeManager.createSubScopeManager(
+			const scopeManager = options.scopeManager.createCheckboxLoopScopeManager(
 				scope,
 				part.value,
 				i,
-				part
+				part,
+				loopIndex
 			);
+			loopIndex++;
 			const subRendered = options.render(
 				mergeObjects({}, options, {
 					compiled: part.subparsed,

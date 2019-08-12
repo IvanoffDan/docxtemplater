@@ -15,7 +15,8 @@ function startTest() {
 	require("./lexer-parser-render");
 	require("./integration");
   require("./doc-props");
-  require("./checkbox-table");
+	require("./checkbox-table");
+	require("./checkbox-loops");
 }
 
 start();

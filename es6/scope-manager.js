@@ -31,16 +31,26 @@ function getValue(tag, meta, num) {
 			return meta.part.lIndex === r.lIndex;
 		}).value;
 	}
+
+	// <<<<<<<<<<< CBX
+	// replace .item with array index for CBX loops
+	let processedTag = tag;
+	if (this.loopIndices.length > 0) {
+		processedTag = tag.replace(/.item/g, `[${this.loopIndices[num - 1]}]`);
+	}
+
+	// >>>>>>>>>>
+
 	// search in the scopes (in reverse order) and keep the first defined value
 	let result;
-	const parser = this.parser(tag, { scopePath: this.scopePath });
+	const parser = this.parser(processedTag, { scopePath: this.scopePath });
 	try {
 		result = parser.get(scope, this.getContext(meta));
 	} catch (error) {
-		throw getScopeParserExecutionError({ tag, scope, error });
+		throw getScopeParserExecutionError({ processedTag, scope, error });
 	}
 	if (result == null && this.num > 0) {
-		return getValue.call(this, tag, meta, num - 1);
+		return getValue.call(this, processedTag, meta, num - 1);
 	}
 	return result;
 }
@@ -61,9 +71,16 @@ function getValueAsync(tag, meta, num) {
 		});
 }
 
+class CheckboxList {
+	constructor(list) {
+		this.list = list;
+	}
+}
+
 // This class responsibility is to manage the scope
 const ScopeManager = class ScopeManager {
 	constructor(options) {
+		this.loopIndices = options.loopIndices; // << CBX to track loop index >>
 		this.scopePath = options.scopePath;
 		this.scopePathItem = options.scopePathItem;
 		this.scopeList = options.scopeList;
@@ -73,6 +90,10 @@ const ScopeManager = class ScopeManager {
 	}
 	loopOver(tag, callback, inverted, meta) {
 		inverted = inverted || false;
+		// Handle CBX loop scope to equal parent scope
+		if (meta.part && meta.part.module === "checkbox-loops") {
+			return this.loopOverValue(new CheckboxList(this.getValue(tag, meta)), callback, inverted);
+		}
 		return this.loopOverValue(this.getValue(tag, meta), callback, inverted);
 	}
 	functorIfInverted(inverted, functor, value, i) {
@@ -97,6 +118,13 @@ const ScopeManager = class ScopeManager {
 		if (this.isValueFalsy(value, type)) {
 			return this.functorIfInverted(inverted, functor, currentValue, 0);
 		}
+		// Handle CBX loop scope to equal parent scope
+		if (value instanceof CheckboxList) {
+			for (let i = 0; i < value.list.length; i++) {
+				this.functorIfInverted(!inverted, functor, currentValue, i);
+			}
+			return true;
+		}
 		if (type === "[object Array]") {
 			for (let i = 0, scope; i < value.length; i++) {
 				scope = value[i];
@@ -112,11 +140,7 @@ const ScopeManager = class ScopeManager {
 	getValue(tag, meta) {
 		const num = this.scopeList.length - 1;
 		return getValue.call(this, tag, meta, num);
-  }
-  getListValue(tag) {
-    // TODO: handle with null getter
-    return get(this.scopeList, [0, tag, this.scopePathItem[this.scopePathItem.length - 1]], "");
-  }
+	}
 	getValueAsync(tag, meta) {
 		const num = this.scopeList.length - 1;
 		return getValueAsync.call(this, tag, meta, num);
@@ -135,6 +159,19 @@ const ScopeManager = class ScopeManager {
 		return new ScopeManager({
 			resolved: this.resolved,
 			parser: this.parser,
+			loopIndices: this.loopIndices.concat(this.loopIndices[this.loopIndices.length - 1]), // CBX
+			scopeList: this.scopeList.concat(scope),
+			scopePath: this.scopePath.concat(tag),
+			scopePathItem: this.scopePathItem.concat(i),
+			scopeLindex: this.scopeLindex.concat(part.lIndex),
+		});
+	}
+
+	createCheckboxLoopScopeManager(scope, tag, i, part, loopIndex) {
+		return new ScopeManager({
+			resolved: this.resolved,
+			parser: this.parser,
+			loopIndices: this.loopIndices.concat(loopIndex), // CBX
 			scopeList: this.scopeList.concat(scope),
 			scopePath: this.scopePath.concat(tag),
 			scopePathItem: this.scopePathItem.concat(i),
@@ -144,6 +181,7 @@ const ScopeManager = class ScopeManager {
 };
 
 module.exports = function(options) {
+	options.loopIndices = [];
 	options.scopePath = [];
 	options.scopePathItem = [];
 	options.scopeLindex = [];

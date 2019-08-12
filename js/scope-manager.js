@@ -1,10 +1,10 @@
 "use strict";
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var _require = require("./errors"),
     getScopeParserExecutionError = _require.getScopeParserExecutionError;
@@ -44,11 +44,20 @@ function _getValue(tag, meta, num) {
     return find(w, function (r) {
       return meta.part.lIndex === r.lIndex;
     }).value;
-  } // search in the scopes (in reverse order) and keep the first defined value
+  } // <<<<<<<<<<< CBX
+  // replace .item with array index for CBX loops
+
+
+  var processedTag = tag;
+
+  if (this.loopIndices.length > 0) {
+    processedTag = tag.replace(/.item/g, "[".concat(this.loopIndices[num - 1], "]"));
+  } // >>>>>>>>>>
+  // search in the scopes (in reverse order) and keep the first defined value
 
 
   var result;
-  var parser = this.parser(tag, {
+  var parser = this.parser(processedTag, {
     scopePath: this.scopePath
   });
 
@@ -56,14 +65,14 @@ function _getValue(tag, meta, num) {
     result = parser.get(scope, this.getContext(meta));
   } catch (error) {
     throw getScopeParserExecutionError({
-      tag: tag,
+      processedTag: processedTag,
       scope: scope,
       error: error
     });
   }
 
   if (result == null && this.num > 0) {
-    return _getValue.call(this, tag, meta, num - 1);
+    return _getValue.call(this, processedTag, meta, num - 1);
   }
 
   return result;
@@ -91,7 +100,13 @@ function _getValueAsync(tag, meta, num) {
 
     return result;
   });
-} // This class responsibility is to manage the scope
+}
+
+var CheckboxList = function CheckboxList(list) {
+  _classCallCheck(this, CheckboxList);
+
+  this.list = list;
+}; // This class responsibility is to manage the scope
 
 
 var ScopeManager =
@@ -99,6 +114,8 @@ var ScopeManager =
 function () {
   function ScopeManager(options) {
     _classCallCheck(this, ScopeManager);
+
+    this.loopIndices = options.loopIndices; // << CBX to track loop index >>
 
     this.scopePath = options.scopePath;
     this.scopePathItem = options.scopePathItem;
@@ -111,7 +128,12 @@ function () {
   _createClass(ScopeManager, [{
     key: "loopOver",
     value: function loopOver(tag, callback, inverted, meta) {
-      inverted = inverted || false;
+      inverted = inverted || false; // Handle CBX loop scope to equal parent scope
+
+      if (meta.part && meta.part.module === "checkbox-loops") {
+        return this.loopOverValue(new CheckboxList(this.getValue(tag, meta)), callback, inverted);
+      }
+
       return this.loopOverValue(this.getValue(tag, meta), callback, inverted);
     }
   }, {
@@ -140,12 +162,21 @@ function () {
 
       if (this.isValueFalsy(value, type)) {
         return this.functorIfInverted(inverted, functor, currentValue, 0);
+      } // Handle CBX loop scope to equal parent scope
+
+
+      if (value instanceof CheckboxList) {
+        for (var i = 0; i < value.list.length; i++) {
+          this.functorIfInverted(!inverted, functor, currentValue, i);
+        }
+
+        return true;
       }
 
       if (type === "[object Array]") {
-        for (var i = 0, scope; i < value.length; i++) {
-          scope = value[i];
-          this.functorIfInverted(!inverted, functor, scope, i);
+        for (var _i = 0, scope; _i < value.length; _i++) {
+          scope = value[_i];
+          this.functorIfInverted(!inverted, functor, scope, _i);
         }
 
         return true;
@@ -162,12 +193,6 @@ function () {
     value: function getValue(tag, meta) {
       var num = this.scopeList.length - 1;
       return _getValue.call(this, tag, meta, num);
-    }
-  }, {
-    key: "getListValue",
-    value: function getListValue(tag) {
-      // TODO: handle with null getter
-      return get(this.scopeList, [0, tag, this.scopePathItem[this.scopePathItem.length - 1]], "");
     }
   }, {
     key: "getValueAsync",
@@ -193,6 +218,22 @@ function () {
       return new ScopeManager({
         resolved: this.resolved,
         parser: this.parser,
+        loopIndices: this.loopIndices.concat(this.loopIndices[this.loopIndices.length - 1]),
+        // CBX
+        scopeList: this.scopeList.concat(scope),
+        scopePath: this.scopePath.concat(tag),
+        scopePathItem: this.scopePathItem.concat(i),
+        scopeLindex: this.scopeLindex.concat(part.lIndex)
+      });
+    }
+  }, {
+    key: "createCheckboxLoopScopeManager",
+    value: function createCheckboxLoopScopeManager(scope, tag, i, part, loopIndex) {
+      return new ScopeManager({
+        resolved: this.resolved,
+        parser: this.parser,
+        loopIndices: this.loopIndices.concat(loopIndex),
+        // CBX
         scopeList: this.scopeList.concat(scope),
         scopePath: this.scopePath.concat(tag),
         scopePathItem: this.scopePathItem.concat(i),
@@ -205,6 +246,7 @@ function () {
 }();
 
 module.exports = function (options) {
+  options.loopIndices = [];
   options.scopePath = [];
   options.scopePathItem = [];
   options.scopeLindex = [];
