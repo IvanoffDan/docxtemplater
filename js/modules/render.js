@@ -124,15 +124,9 @@ function () {
       }
 
       if (part.type === "placeholder" && !part.module) {
-        var value;
-
-        if (part.value.match(/^(\w+).item$/)) {
-          value = scopeManager.getListValue(part.value.match(/^(\w+).item$/)[1]);
-        } else {
-          value = scopeManager.getValue(part.value, {
-            part: part
-          });
-        }
+        var value = scopeManager.getValue(part.value, {
+          part: part
+        });
 
         if (value == null) {
           value = nullGetter(part);

@@ -11,6 +11,9 @@ var _require2 = require("./errors"),
 
 var _get = require("lodash/get");
 
+var expressions = require("angular-expressions"); // Not used - overriden in cbdev/validator/services/templater
+
+
 function parser(tag) {
   return _defineProperty({}, "get", function get(scope) {
     if (tag === "." || tag.match(/^\w+.item$/)) {
@@ -19,6 +22,37 @@ function parser(tag) {
 
     return _get(scope, tag);
   });
+} // should be the same function used in cbdev/validator/services/templater
+// included here for testing
+
+
+function angularParser(tag) {
+  var getter;
+  var trimmedTag = tag.trim();
+
+  if (trimmedTag === ".") {
+    getter = function getter(s) {
+      return s;
+    };
+  } else if (trimmedTag.includes(":formatted")) {
+    // use getter directly, bypass parser here
+    // formatted values can't be used in expressions
+    getter = function getter(s) {
+      return _get(s, trimmedTag, "N/A");
+    };
+  } else {
+    getter = function getter(s) {
+      var expression = trimmedTag.replace(/(’|“|”)/g, "'");
+      var compiledExpression = expressions.compile(expression);
+      return compiledExpression(s);
+    };
+  }
+
+  return {
+    get: function get(scope) {
+      return getter(scope);
+    }
+  };
 }
 
 function getNearestLeft(parsed, elements, index) {
@@ -410,5 +444,7 @@ module.exports = {
   wordToUtf8: wordToUtf8,
   utf8ToWord: utf8ToWord,
   concatArrays: concatArrays,
-  charMap: charMap
+  charMap: charMap,
+  angularParser: angularParser // Same parse function as in cbdev/validator, included here for testing
+
 };

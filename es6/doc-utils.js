@@ -4,6 +4,9 @@ const { DOMParser, XMLSerializer } = require("xmldom");
 const { throwXmlTagNotFound } = require("./errors");
 const get = require("lodash/get");
 
+const expressions = require("angular-expressions");
+
+// Not used - overriden in cbdev/validator/services/templater
 function parser(tag) {
 	return {
 		["get"](scope) {
@@ -13,6 +16,32 @@ function parser(tag) {
 			return get(scope, tag);
 		},
 	};
+}
+
+// should be the same function used in cbdev/validator/services/templater
+// included here for testing
+function angularParser(tag) {
+  let getter;
+  const trimmedTag = tag.trim();
+  if (trimmedTag === ".") {
+    getter = (s) => s;
+  } else if (trimmedTag.includes(":formatted")) {
+    // use getter directly, bypass parser here
+    // formatted values can't be used in expressions
+    getter = (s) => get(s, trimmedTag, "N/A");
+  } else {
+    getter = (s) => {
+      const expression = trimmedTag.replace(/(’|“|”)/g, "'");
+      const compiledExpression = expressions.compile(expression);
+      return compiledExpression(s);
+    };
+  }
+
+  return {
+    get: (scope) => {
+			return getter(scope);
+		},
+  };
 }
 
 function getNearestLeft(parsed, elements, index) {
@@ -353,4 +382,5 @@ module.exports = {
 	utf8ToWord,
 	concatArrays,
 	charMap,
+	angularParser, // Same parse function as in cbdev/validator, included here for testing
 };
