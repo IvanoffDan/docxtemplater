@@ -106,18 +106,26 @@ class LoopModule {
 		) {
 			return parsed;
 		}
+		let level = 0;
 		const chunks = chunkBy(parsed, function(p) {
 			if (isParagraphStart(p)) {
-				return "start";
+				level++;
+				if (level === 1) {
+					return "start";
+				}
 			}
 			if (isParagraphEnd(p)) {
-				return "end";
+				level--;
+				if (level === 0) {
+					return "end";
+				}
 			}
 			return null;
 		});
 		if (chunks.length <= 2) {
 			return parsed;
 		}
+
 		const firstChunk = chunks[0];
 		const lastChunk = last(chunks);
 		const firstOffset = getOffset(firstChunk);
@@ -170,37 +178,32 @@ class LoopModule {
 		if (part.type !== "placeholder" || part.module !== moduleName) {
 			return null;
 		}
-		const value = options.scopeManager.getValue(part.value, { part });
+
+		const sm = options.scopeManager;
+		const promisedValue = sm.getValue(part.value, { part });
 		const promises = [];
 		function loopOver(scope, i) {
-			const scopeManager = options.scopeManager.createSubScopeManager(
-				scope,
-				part.value,
-				i,
-				part
-			);
+			const scopeManager = sm.createSubScopeManager(scope, part.value, i, part);
 			promises.push(
-				options.resolve(
-					mergeObjects(options, {
-						compiled: part.subparsed,
-						tags: {},
-						scopeManager,
-					})
-				)
+				options.resolve({
+					filePath: options.filePath,
+					modules: options.modules,
+					baseNullGetter: options.baseNullGetter,
+					resolve: options.resolve,
+					compiled: part.subparsed,
+					tags: {},
+					scopeManager,
+				})
 			);
 		}
-		return Promise.resolve(value)
-			.then(function(value) {
-				options.scopeManager.loopOverValue(value, loopOver, part.inverted);
-				return Promise.all(promises).then(function(r) {
-					return r.map(function({ resolved }) {
-						return resolved;
-					});
+		return Promise.resolve(promisedValue).then(function(value) {
+			sm.loopOverValue(value, loopOver, part.inverted);
+			return Promise.all(promises).then(function(r) {
+				return r.map(function({ resolved }) {
+					return resolved;
 				});
-			})
-			.then(function(r) {
-				return r;
 			});
+		});
 	}
 }
 

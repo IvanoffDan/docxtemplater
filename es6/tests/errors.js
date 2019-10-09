@@ -1,18 +1,17 @@
-"use strict";
-
 const expressions = require("angular-expressions");
 
 const { loadFile, loadDocument, rejectSoon } = require("./utils");
 const Errors = require("../errors.js");
 const {
 	createXmlTemplaterDocx,
+	createXmlTemplaterDocxNoRender,
 	wrapMultiError,
 	expectToThrow,
 	expectToThrowAsync,
 } = require("./utils");
 
 function angularParser(tag) {
-	const expr = expressions.compile(tag.replace(/’/g, "'"));
+	const expr = expressions.compile(tag.replace(/(’|“|”|‘)/g, "'"));
 	return {
 		get(scope) {
 			return expr(scope);
@@ -139,6 +138,7 @@ describe("Compilation errors", function() {
 			properties: {
 				id: "unopened_loop",
 				xtag: "loop",
+				offset: 0,
 			},
 		};
 		const create = createXmlTemplaterDocx.bind(null, content);
@@ -157,6 +157,7 @@ describe("Compilation errors", function() {
 			properties: {
 				id: "unclosed_loop",
 				xtag: "loop",
+				offset: 0,
 			},
 		};
 		const create = createXmlTemplaterDocx.bind(null, content);
@@ -201,7 +202,7 @@ describe("Compilation errors", function() {
 				],
 				xtag: "myrawtag",
 				rootError: {
-					message: 'No tag "w:p" was found at the right',
+					message: 'No tag "w:p" was found at the left',
 				},
 			},
 		};
@@ -326,7 +327,7 @@ http://errors.angularjs.org/"NG_VERSION_FULL"/$parse/ueoe?p0=name%2B%2B`,
 
 describe("Runtime errors", function() {
 	it("should fail when customparser fails to execute", function() {
-		const content = "<w:t>{name|upper}</w:t>";
+		const content = "<w:t> {name|upper}</w:t>";
 		function errorParser() {
 			return {
 				get() {
@@ -335,21 +336,77 @@ describe("Runtime errors", function() {
 			};
 		}
 		const expectedError = {
-			name: "ScopeParserError",
-			message: "Scope parser execution failed",
+			name: "TemplateError",
+			message: "Multi error",
 			properties: {
-				id: "scopeparser_execution_failed",
-				tag: "name|upper",
-				scope: {},
-				rootError: {
-					message: "foo bar",
-				},
+				errors: [
+					{
+						name: "ScopeParserError",
+						message: "Scope parser execution failed",
+						properties: {
+							id: "scopeparser_execution_failed",
+							scope: {},
+							tag: "name|upper",
+							offset: 1,
+							rootError: { message: "foo bar" },
+						},
+					},
+				],
+				id: "multi_error",
 			},
 		};
 		const create = createXmlTemplaterDocx.bind(null, content, {
 			parser: errorParser,
 		});
-		expectToThrow(create, Errors.XTScopeParserError, expectedError);
+		expectToThrow(create, Errors.XTTemplateError, expectedError);
+	});
+
+	it("should fail when customparser fails to execute on multiple tags", function() {
+		const content = "<w:t>{name|upper} {othername|upper}</w:t>";
+		let count = 0;
+		function errorParser() {
+			return {
+				get() {
+					count++;
+					throw new Error(`foo ${count}`);
+				},
+			};
+		}
+		const expectedError = {
+			name: "TemplateError",
+			message: "Multi error",
+			properties: {
+				errors: [
+					{
+						name: "ScopeParserError",
+						message: "Scope parser execution failed",
+						properties: {
+							id: "scopeparser_execution_failed",
+							scope: {},
+							tag: "name|upper",
+							rootError: { message: "foo 1" },
+							offset: 0,
+						},
+					},
+					{
+						name: "ScopeParserError",
+						message: "Scope parser execution failed",
+						properties: {
+							id: "scopeparser_execution_failed",
+							scope: {},
+							tag: "othername|upper",
+							rootError: { message: "foo 2" },
+							offset: 13,
+						},
+					},
+				],
+				id: "multi_error",
+			},
+		};
+		const create = createXmlTemplaterDocx.bind(null, content, {
+			parser: errorParser,
+		});
+		expectToThrow(create, Errors.XTTemplateError, expectedError);
 	});
 });
 
@@ -570,6 +627,8 @@ describe("Multi errors", function() {
 						properties: {
 							id: "unclosed_loop",
 							xtag: "yum",
+							// To test that the offset is present and well calculated
+							offset: 68,
 						},
 					},
 				],
@@ -630,6 +689,7 @@ describe("Multi errors", function() {
 						name: "ScopeParserError",
 						message: "Scope parser compilation failed",
 						properties: {
+							offset: 0,
 							id: "scopeparser_compilation_failed",
 							tag: "name++",
 							rootError: {
@@ -642,6 +702,7 @@ http://errors.angularjs.org/"NG_VERSION_FULL"/$parse/ueoe?p0=name%2B%2B`,
 						name: "ScopeParserError",
 						message: "Scope parser compilation failed",
 						properties: {
+							offset: 9,
 							id: "scopeparser_compilation_failed",
 							tag: "foo|||bang",
 							rootError: {
@@ -809,7 +870,7 @@ http://errors.angularjs.org/"NG_VERSION_FULL"/$parse/ueoe?p0=name%2B%2B`,
 							id: "raw_tag_outerxml_invalid",
 							xtag: "bang",
 							rootError: {
-								message: 'No tag "w:p" was found at the right',
+								message: 'No tag "w:p" was found at the left',
 							},
 							postparsedLength: 12,
 							expandTo: "w:p",
@@ -943,6 +1004,7 @@ http://errors.angularjs.org/"NG_VERSION_FULL"/$parse/ueoe?p0=name%2B%2B`,
 							'The position of the loop tags "users" would produce invalid XML',
 						properties: {
 							tag: "users",
+							offset: [0, 17],
 							id: "loop_position_invalid",
 						},
 					},
@@ -959,7 +1021,7 @@ http://errors.angularjs.org/"NG_VERSION_FULL"/$parse/ueoe?p0=name%2B%2B`,
 
 describe("Rendering error", function() {
 	it("should show an error when using corrupt characters", function() {
-		const content = "<w:t>{user}</w:t>";
+		const content = "<w:t> {user}</w:t>";
 		const expectedError = {
 			name: "RenderingError",
 			message: "There are some XML corrupt characters",
@@ -967,13 +1029,18 @@ describe("Rendering error", function() {
 				id: "invalid_xml_characters",
 				value: "\u001c",
 				xtag: "user",
+				offset: 1,
 			},
 		};
 		const create = createXmlTemplaterDocx.bind(null, content, {
 			parser: angularParser,
 			tags: { user: String.fromCharCode(28) },
 		});
-		return expectToThrow(create, Errors.RenderingError, expectedError);
+		expectToThrow(
+			create,
+			Errors.XTTemplateError,
+			wrapMultiError(expectedError)
+		);
 	});
 });
 
@@ -994,7 +1061,8 @@ describe("Async errors", function() {
 				},
 			},
 		};
-		const doc = createXmlTemplaterDocx(content);
+		const doc = createXmlTemplaterDocxNoRender(content);
+		doc.compile();
 		function create() {
 			return doc.resolveData({ user: rejectSoon(new Error("Foobar")) });
 		}
