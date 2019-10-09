@@ -5,7 +5,7 @@ var reg = /(>)\s*(<)(\/*)/g;
 var wsexp = / *(.*) +\n/g;
 var contexp = /(<.+>)(.+\n)/g;
 
-module.exports = function (xml) {
+function xmlprettify(xml) {
   xml = xml.replace(reg, "$1\n$2$3").replace(wsexp, "$1\n").replace(contexp, "$1\n$2");
   var formatted = "";
   var lines = xml.split("\n");
@@ -50,7 +50,7 @@ module.exports = function (xml) {
         rest = ln.replace(aRegex, "$1");
       }
 
-      var attrRegex = / +([a-zA-Z0-9:]+)="([^"]+)"/g;
+      var attrRegex = / *([a-zA-Z0-9:]+)="([^"]+)"/g;
       var match = attrRegex.exec(rest);
       var attributes = [];
 
@@ -76,9 +76,13 @@ module.exports = function (xml) {
         return "".concat(attribute.key, "=\"").concat(attribute.value, "\"");
       }).join(" ");
 
-      if (rest) {
-        ln = ln.replace(rest, stringifiedAttrs);
+      if (rest != null) {
+        ln = ln.replace(rest, stringifiedAttrs).replace(/ +>/, ">");
       }
+    }
+
+    if (type === "single") {
+      ln = ln.replace(/ +\/>/, "/>");
     }
 
     lastType = type;
@@ -98,4 +102,6 @@ module.exports = function (xml) {
   }
 
   return formatted;
-};
+}
+
+module.exports = xmlprettify;

@@ -155,13 +155,22 @@ function () {
         return parsed;
       }
 
+      var level = 0;
       var chunks = chunkBy(parsed, function (p) {
         if (isParagraphStart(p)) {
-          return "start";
+          level++;
+
+          if (level === 1) {
+            return "start";
+          }
         }
 
         if (isParagraphEnd(p)) {
-          return "end";
+          level--;
+
+          if (level === 0) {
+            return "end";
+          }
         }
 
         return null;
@@ -226,30 +235,33 @@ function () {
         return null;
       }
 
-      var value = options.scopeManager.getValue(part.value, {
+      var sm = options.scopeManager;
+      var promisedValue = sm.getValue(part.value, {
         part: part
       });
       var promises = [];
 
       function loopOver(scope, i) {
-        var scopeManager = options.scopeManager.createSubScopeManager(scope, part.value, i, part);
-        promises.push(options.resolve(mergeObjects(options, {
+        var scopeManager = sm.createSubScopeManager(scope, part.value, i, part);
+        promises.push(options.resolve({
+          filePath: options.filePath,
+          modules: options.modules,
+          baseNullGetter: options.baseNullGetter,
+          resolve: options.resolve,
           compiled: part.subparsed,
           tags: {},
           scopeManager: scopeManager
-        })));
+        }));
       }
 
-      return Promise.resolve(value).then(function (value) {
-        options.scopeManager.loopOverValue(value, loopOver, part.inverted);
+      return Promise.resolve(promisedValue).then(function (value) {
+        sm.loopOverValue(value, loopOver, part.inverted);
         return Promise.all(promises).then(function (r) {
           return r.map(function (_ref2) {
             var resolved = _ref2.resolved;
             return resolved;
           });
         });
-      }).then(function (r) {
-        return r;
       });
     }
   }]);

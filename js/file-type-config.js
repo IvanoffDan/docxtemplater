@@ -16,7 +16,7 @@ var render = require("./modules/render");
 
 var PptXFileTypeConfig = {
   getTemplatedFiles: function getTemplatedFiles(zip) {
-    var slideTemplates = zip.file(/ppt\/(slides|slideMasters)\/(slide|slideMaster)\d+\.xml/).map(function (file) {
+    var slideTemplates = zip.file(/ppt\/(slideMasters)\/(slideMaster)\d+\.xml/).map(function (file) {
       return file.name;
     });
     return slideTemplates.concat(["ppt/presentation.xml", "docProps/app.xml", "docProps/core.xml"]);
@@ -41,20 +41,14 @@ var PptXFileTypeConfig = {
 };
 var DocXFileTypeConfig = {
   getTemplatedFiles: function getTemplatedFiles(zip) {
-    var baseTags = ["docProps/core.xml", "docProps/app.xml", "word/document.xml", "word/document2.xml"];
-    var slideTemplates = zip.file(/word\/(header|footer)\d+\.xml/).map(function (file) {
+    var baseTags = ["docProps/core.xml", "docProps/app.xml"];
+    var headerFooters = zip.file(/word\/(header|footer)\d+\.xml/).map(function (file) {
       return file.name;
     });
-    return slideTemplates.concat(baseTags);
+    return headerFooters.concat(baseTags);
   },
-  textPath: function textPath(zip) {
-    if (zip.files["word/document.xml"]) {
-      return "word/document.xml";
-    }
-
-    if (zip.files["word/document2.xml"]) {
-      return "word/document2.xml";
-    }
+  textPath: function textPath(doc) {
+    return doc.targets[0];
   },
   tagsXmlTextArray: ["Company", "HyperlinkBase", "Manager", "cp:category", "cp:keywords", "dc:creator", "dc:description", "dc:subject", "dc:title", "w:t", "m:t", "vt:lpstr"],
   tagsXmlLexedArray: ["w:tc", "w:tr", "w:table", "w:p", "w:r", "w:rPr", "w:pPr", "w:spacing"],

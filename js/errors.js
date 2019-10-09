@@ -4,13 +4,9 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function first(a) {
-  return a[0];
-}
-
-function last(a) {
-  return a[a.length - 1];
-}
+var _require = require("./utils"),
+    last = _require.last,
+    first = _require.first;
 
 function XTError(message) {
   this.name = "GenericError";
@@ -28,13 +24,13 @@ function XTTemplateError(message) {
 
 XTTemplateError.prototype = new XTError();
 
-function RenderingError(message) {
+function XTRenderingError(message) {
   this.name = "RenderingError";
   this.message = message;
   this.stack = new Error(message).stack;
 }
 
-RenderingError.prototype = new XTError();
+XTRenderingError.prototype = new XTError();
 
 function XTScopeParserError(message) {
   this.name = "ScopeParserError";
@@ -123,17 +119,19 @@ function throwXmlTagNotFound(options) {
   throw err;
 }
 
-function throwCorruptCharacters(_ref) {
+function getCorruptCharactersException(_ref) {
   var tag = _ref.tag,
-      value = _ref.value;
-  var err = new RenderingError("There are some XML corrupt characters");
+      value = _ref.value,
+      offset = _ref.offset;
+  var err = new XTRenderingError("There are some XML corrupt characters");
   err.properties = {
     id: "invalid_xml_characters",
     xtag: tag,
     value: value,
+    offset: offset,
     explanation: "There are some corrupt characters for the field ${tag}"
   };
-  throw err;
+  return err;
 }
 
 function throwContentMustBeString(type) {
@@ -183,30 +181,33 @@ function getUnmatchedLoopException(options) {
   err.properties = {
     id: "".concat(t, "_loop"),
     explanation: "The loop with tag \"".concat(tag, "\" is ").concat(t),
-    xtag: tag
+    xtag: tag,
+    offset: options.part.offset
   };
   return err;
 }
 
-function getClosingTagNotMatchOpeningTag(options) {
-  var tags = options.tags;
+function getClosingTagNotMatchOpeningTag(_ref2) {
+  var tags = _ref2.tags;
   var err = new XTTemplateError("Closing tag does not match opening tag");
   err.properties = {
     id: "closing_tag_does_not_match_opening_tag",
     explanation: "The tag \"".concat(tags[0].value, "\" is closed by the tag \"").concat(tags[1].value, "\""),
-    openingtag: tags[0].value,
-    offset: [tags[0].offset, tags[1].offset],
-    closingtag: tags[1].value
+    openingtag: first(tags).value,
+    offset: [first(tags).offset, last(tags).offset],
+    closingtag: last(tags).value
   };
   return err;
 }
 
-function getScopeCompilationError(_ref2) {
-  var tag = _ref2.tag,
-      rootError = _ref2.rootError;
+function getScopeCompilationError(_ref3) {
+  var tag = _ref3.tag,
+      rootError = _ref3.rootError,
+      offset = _ref3.offset;
   var err = new XTScopeParserError("Scope parser compilation failed");
   err.properties = {
     id: "scopeparser_compilation_failed",
+    offset: offset,
     tag: tag,
     explanation: "The scope parser for the tag \"".concat(tag, "\" failed to compile"),
     rootError: rootError
@@ -214,28 +215,32 @@ function getScopeCompilationError(_ref2) {
   return err;
 }
 
-function getScopeParserExecutionError(_ref3) {
-  var tag = _ref3.tag,
-      scope = _ref3.scope,
-      error = _ref3.error;
+function getScopeParserExecutionError(_ref4) {
+  var tag = _ref4.tag,
+      scope = _ref4.scope,
+      error = _ref4.error,
+      offset = _ref4.offset;
   var err = new XTScopeParserError("Scope parser execution failed");
   err.properties = {
     id: "scopeparser_execution_failed",
     explanation: "The scope parser for the tag ".concat(tag, " failed to execute"),
     scope: scope,
+    offset: offset,
     tag: tag,
     rootError: error
   };
   return err;
 }
 
-function getLoopPositionProducesInvalidXMLError(_ref4) {
-  var tag = _ref4.tag;
+function getLoopPositionProducesInvalidXMLError(_ref5) {
+  var tag = _ref5.tag,
+      offset = _ref5.offset;
   var err = new XTTemplateError("The position of the loop tags \"".concat(tag, "\" would produce invalid XML"));
   err.properties = {
     tag: tag,
     id: "loop_position_invalid",
-    explanation: "The tags \"".concat(tag, "\" are misplaced in the document, for example one of them is in a table and the other one outside the table")
+    explanation: "The tags \"".concat(tag, "\" are misplaced in the document, for example one of them is in a table and the other one outside the table"),
+    offset: offset
   };
   return err;
 }
@@ -298,7 +303,9 @@ module.exports = {
   XTInternalError: XTInternalError,
   XTScopeParserError: XTScopeParserError,
   XTAPIVersionError: XTAPIVersionError,
-  RenderingError: RenderingError,
+  // Remove this alias in v4
+  RenderingError: XTRenderingError,
+  XTRenderingError: XTRenderingError,
   getClosingTagNotMatchOpeningTag: getClosingTagNotMatchOpeningTag,
   getLoopPositionProducesInvalidXMLError: getLoopPositionProducesInvalidXMLError,
   getScopeCompilationError: getScopeCompilationError,
@@ -306,9 +313,9 @@ module.exports = {
   getUnclosedTagException: getUnclosedTagException,
   getUnmatchedLoopException: getUnmatchedLoopException,
   getUnopenedTagException: getUnopenedTagException,
+  getCorruptCharactersException: getCorruptCharactersException,
   throwApiVersionError: throwApiVersionError,
   throwContentMustBeString: throwContentMustBeString,
-  throwCorruptCharacters: throwCorruptCharacters,
   throwFileTypeNotHandled: throwFileTypeNotHandled,
   throwFileTypeNotIdentified: throwFileTypeNotIdentified,
   throwLocationInvalid: throwLocationInvalid,
