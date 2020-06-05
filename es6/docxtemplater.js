@@ -4,6 +4,9 @@ const DocUtils = require("./doc-utils");
 DocUtils.traits = require("./traits");
 DocUtils.moduleWrapper = require("./module-wrapper");
 
+const commonModule = require("./modules/common");
+const ctXML = "[Content_Types].xml";
+
 const Lexer = require("./lexer");
 const {
 	defaults,
@@ -21,7 +24,7 @@ const {
 	throwApiVersionError,
 } = require("./errors");
 
-const currentModuleApiVersion = [3, 10, 0];
+const currentModuleApiVersion = [3, 12, 0];
 
 const Docxtemplater = class Docxtemplater {
 	constructor() {
@@ -31,7 +34,7 @@ const Docxtemplater = class Docxtemplater {
 			);
 		}
 		this.compiled = {};
-		this.modules = [];
+		this.modules = [commonModule()];
 		this.setOptions({});
 	}
 	getModuleApiVersion() {
@@ -84,6 +87,9 @@ const Docxtemplater = class Docxtemplater {
 		});
 	}
 	attachModule(module, options = {}) {
+		if (module.requiredAPIVersion) {
+			this.verifyApiVersion(module.requiredAPIVersion);
+		}
 		const { prefix } = options;
 		if (prefix) {
 			module.prefix = prefix;
@@ -113,7 +119,7 @@ const Docxtemplater = class Docxtemplater {
 	loadZip(zip) {
 		if (zip.loadAsync) {
 			throw new XTInternalError(
-				"Docxtemplater doesn't handle JSZip version >=3, see changelog"
+				"Docxtemplater doesn't handle JSZip version >=3, please use pizzip"
 			);
 		}
 		this.zip = zip;
@@ -178,16 +184,26 @@ const Docxtemplater = class Docxtemplater {
 		if (this.zip.files.mimetype) {
 			fileType = "odt";
 		}
-		if (
-			this.zip.files["word/document.xml"] ||
-			this.zip.files["word/document2.xml"]
-		) {
-			fileType = "docx";
-		}
-		if (this.zip.files["ppt/presentation.xml"]) {
-			fileType = "pptx";
-		}
-
+		const contentTypes = this.zip.files[ctXML];
+		this.targets = [];
+		const contentTypeXml = contentTypes ? str2xml(contentTypes.asText()) : null;
+		const overrides = contentTypeXml
+			? contentTypeXml.getElementsByTagName("Override")
+			: null;
+		const defaults = contentTypeXml
+			? contentTypeXml.getElementsByTagName("Default")
+			: null;
+		this.modules.forEach(module => {
+			fileType =
+				module.getFileType({
+					zip: this.zip,
+					contentTypes,
+					contentTypeXml,
+					overrides,
+					defaults,
+					doc: this,
+				}) || fileType;
+		});
 		if (fileType === "odt") {
 			throwFileTypeNotHandled(fileType);
 		}
@@ -197,6 +213,7 @@ const Docxtemplater = class Docxtemplater {
 		this.fileType = fileType;
 		this.fileTypeConfig =
 			this.options.fileTypeConfig ||
+			this.fileTypeConfig ||
 			Docxtemplater.FileTypeConfig[this.fileType];
 		return this;
 	}
@@ -261,11 +278,14 @@ const Docxtemplater = class Docxtemplater {
 	}
 	getFullText(path) {
 		return this.createTemplateClass(
-			path || this.fileTypeConfig.textPath(this.zip)
+			path || this.fileTypeConfig.textPath(this)
 		).getFullText();
 	}
 	getTemplatedFiles() {
 		this.templatedFiles = this.fileTypeConfig.getTemplatedFiles(this.zip);
+		this.targets.forEach(target => {
+			this.templatedFiles.push(target);
+		});
 		return this.templatedFiles;
 	}
 };
