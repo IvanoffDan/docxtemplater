@@ -9,50 +9,18 @@ var _require = require("xmldom"),
 var _require2 = require("./errors"),
     throwXmlTagNotFound = _require2.throwXmlTagNotFound;
 
-var _get = require("lodash/get");
-
-var expressions = require("angular-expressions"); // Not used - overriden in cbdev/validator/services/templater
-
+var _require3 = require("./utils"),
+    last = _require3.last,
+    first = _require3.first;
 
 function parser(tag) {
   return _defineProperty({}, "get", function get(scope) {
-    if (tag === "." || tag.match(/^\w+.item$/)) {
+    if (tag === ".") {
       return scope;
     }
 
-    return _get(scope, tag);
+    return scope[tag];
   });
-} // should be the same function used in cbdev/validator/services/templater
-// included here for testing
-
-
-function angularParser(tag) {
-  var getter;
-  var trimmedTag = tag.trim();
-
-  if (trimmedTag === ".") {
-    getter = function getter(s) {
-      return s;
-    };
-  } else if (trimmedTag.includes(":formatted")) {
-    // use getter directly, bypass parser here
-    // formatted values can't be used in expressions
-    getter = function getter(s) {
-      return _get(s, trimmedTag, "N/A");
-    };
-  } else {
-    getter = function getter(s) {
-      var expression = trimmedTag.replace(/(’|“|”)/g, "'");
-      var compiledExpression = expressions.compile(expression);
-      return compiledExpression(s);
-    };
-  }
-
-  return {
-    get: function get(scope) {
-      return getter(scope);
-    }
-  };
 }
 
 function getNearestLeft(parsed, elements, index) {
@@ -62,7 +30,7 @@ function getNearestLeft(parsed, elements, index) {
     for (var j = 0, len = elements.length; j < len; j++) {
       var element = elements[j];
 
-      if (part.value.indexOf("<" + element) === 0 && [">", " "].indexOf(part.value[element.length + 1]) !== -1) {
+      if (isStarting(part.value, element)) {
         return elements[j];
       }
     }
@@ -78,7 +46,7 @@ function getNearestRight(parsed, elements, index) {
     for (var j = 0, len = elements.length; j < len; j++) {
       var element = elements[j];
 
-      if (part.value === "</" + element + ">") {
+      if (isEnding(part.value, element)) {
         return elements[j];
       }
     }
@@ -112,13 +80,12 @@ function unique(arr) {
 function chunkBy(parsed, f) {
   return parsed.reduce(function (chunks, p) {
     var currentChunk = last(chunks);
+    var res = f(p);
 
     if (currentChunk.length === 0) {
       currentChunk.push(p);
       return chunks;
     }
-
-    var res = f(p);
 
     if (res === "start") {
       chunks.push([p]);
@@ -133,10 +100,6 @@ function chunkBy(parsed, f) {
   }, [[]]).filter(function (p) {
     return p.length > 0;
   });
-}
-
-function last(a) {
-  return a[a.length - 1];
 }
 
 var defaults = {
@@ -182,6 +145,11 @@ function xml2str(xmlNode) {
 }
 
 function str2xml(str) {
+  if (str.charCodeAt(0) === 65279) {
+    // BOM sequence
+    str = str.substr(1);
+  }
+
   var parser = new DOMParser();
   return parser.parseFromString(str, "text/xml");
 }
@@ -193,10 +161,10 @@ var charMap = {
   ">": "&gt;",
   '"': "&quot;"
 };
-var regexStripRegexp = /[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g;
 
 function escapeRegExp(str) {
-  return str.replace(regexStripRegexp, "\\$&");
+  // to be able to use a string as a regex
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 var charMapRegexes = Object.keys(charMap).map(function (endChar) {
@@ -275,6 +243,14 @@ function pregMatchAll(regex, content) {
   return matchArray;
 }
 
+function isEnding(value, element) {
+  return value === "</" + element + ">";
+}
+
+function isStarting(value, element) {
+  return value.indexOf("<" + element) === 0 && [">", " "].indexOf(value[element.length + 1]) !== -1;
+}
+
 function getRight(parsed, element, index) {
   var val = getRightOrNull(parsed, element, index);
 
@@ -295,13 +271,23 @@ function getRightOrNull(parsed, elements, index) {
     elements = [elements];
   }
 
+  var level = 1;
+
   for (var i = index, l = parsed.length; i < l; i++) {
     var part = parsed[i];
 
     for (var j = 0, len = elements.length; j < len; j++) {
       var element = elements[j];
 
-      if (part.value === "</" + element + ">") {
+      if (isEnding(part.value, element)) {
+        level--;
+      }
+
+      if (isStarting(part.value, element)) {
+        level++;
+      }
+
+      if (level === 0) {
         return i;
       }
     }
@@ -330,13 +316,23 @@ function getLeftOrNull(parsed, elements, index) {
     elements = [elements];
   }
 
+  var level = 1;
+
   for (var i = index; i >= 0; i--) {
     var part = parsed[i];
 
     for (var j = 0, len = elements.length; j < len; j++) {
       var element = elements[j];
 
-      if (part.value.indexOf("<" + element) === 0 && [">", " "].indexOf(part.value[element.length + 1]) !== -1) {
+      if (isStarting(part.value, element)) {
+        level--;
+      }
+
+      if (isEnding(part.value, element)) {
+        level++;
+      }
+
+      if (level === 0) {
         return i;
       }
     }
@@ -428,6 +424,7 @@ module.exports = {
   unique: unique,
   chunkBy: chunkBy,
   last: last,
+  first: first,
   mergeObjects: mergeObjects,
   xml2str: xml2str,
   str2xml: str2xml,
@@ -444,7 +441,5 @@ module.exports = {
   wordToUtf8: wordToUtf8,
   utf8ToWord: utf8ToWord,
   concatArrays: concatArrays,
-  charMap: charMap,
-  angularParser: angularParser // Same parse function as in cbdev/validator, included here for testing
-
+  charMap: charMap
 };

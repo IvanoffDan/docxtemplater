@@ -53,6 +53,7 @@ function () {
     value: function optionsTransformer(options, docxtemplater) {
       this.fileTypeConfig = docxtemplater.fileTypeConfig;
       this.zip = docxtemplater.zip;
+      this.targets = docxtemplater.targets;
       this.templatedFiles = docxtemplater.getTemplatedFiles();
       this.fileType = docxtemplater.fileType;
       return options;
@@ -112,7 +113,7 @@ function () {
   }, {
     key: "getTags",
     value: function getTags(file) {
-      file = file || this.fileTypeConfig.textPath(this.zip);
+      file = file || this.fileTypeConfig.textPath(this);
       return _getTags(cloneDeep(this.fullInspected[file].postparsed));
     }
   }, {
@@ -127,7 +128,7 @@ function () {
   }, {
     key: "getStructuredTags",
     value: function getStructuredTags(file) {
-      file = file || this.fileTypeConfig.textPath(this.zip);
+      file = file || this.fileTypeConfig.textPath(this);
       return _getStructuredTags(cloneDeep(this.fullInspected[file].postparsed));
     }
   }, {

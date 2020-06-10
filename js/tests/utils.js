@@ -6,7 +6,7 @@ var chai = require("chai");
 
 var expect = chai.expect;
 
-var JSZip = require("jszip");
+var PizZip = require("pizzip");
 
 var fs = require("fs");
 
@@ -20,12 +20,15 @@ var diff = require("diff");
 
 var Docxtemplater = require("../docxtemplater.js");
 
+var _require2 = require("../utils.js"),
+    first = _require2.first;
+
 var xmlPrettify = require("./xml-prettify");
 
 var countFiles = 1;
 var allStarted = false;
 var examplesDirectory;
-var docX = {};
+var documentCache = {};
 var imageData = {};
 var emptyNamespace = /xmlns:[a-z0-9]+=""/;
 
@@ -33,11 +36,13 @@ function unifiedDiff(actual, expected) {
   var indent = "      ";
 
   function cleanUp(line) {
-    if (line[0] === "+") {
+    var firstChar = first(line);
+
+    if (firstChar === "+") {
       return indent + line;
     }
 
-    if (line[0] === "-") {
+    if (firstChar === "-") {
       return indent + line;
     }
 
@@ -140,7 +145,7 @@ function shouldBeSame(options) {
   var expectedZip;
 
   try {
-    expectedZip = docX[expectedName].zip;
+    expectedZip = documentCache[expectedName].zip;
   } catch (e) {
     writeFile(expectedName, zip);
     console.log(JSON.stringify({
@@ -261,7 +266,7 @@ function cleanError(e, expectedError) {
     expect(expectedError.properties.rootError, JSON.stringify(expectedError.properties)).to.be.instanceOf(Object);
 
     if (expectedError) {
-      expect(e.properties.rootError.message).to.equal(expectedError.properties.rootError.message);
+      expect(e.properties.rootError.message).to.equal(expectedError.properties.rootError.message, "rootError.message");
     }
 
     delete e.properties.rootError;
@@ -338,7 +343,7 @@ function expectToThrowAsync(fn, type, expectedError) {
     return r.then(function () {
       return null;
     });
-  }).catch(function (error) {
+  })["catch"](function (error) {
     return error;
   }).then(function (e) {
     return errorVerifier(e, type, expectedError);
@@ -357,8 +362,8 @@ function expectToThrow(fn, type, expectedError) {
   return errorVerifier(err, type, expectedError);
 }
 
-function load(name, content, fileType, obj) {
-  var zip = new JSZip(content);
+function load(name, content, obj) {
+  var zip = new PizZip(content);
   obj[name] = new Docxtemplater();
   obj[name].loadZip(zip);
   obj[name].loadedName = name;
@@ -367,7 +372,17 @@ function load(name, content, fileType, obj) {
 }
 
 function loadDocument(name, content) {
-  return load(name, content, "docx", docX);
+  return load(name, content, documentCache);
+}
+
+function cacheDocument(name, content) {
+  var zip = new PizZip(content);
+  documentCache[name] = {
+    loadedName: name,
+    loadedContent: content,
+    zip: zip
+  };
+  return documentCache[name];
 }
 
 function loadImage(name, content) {
@@ -382,7 +397,7 @@ function loadFile(name, callback) {
     return callback(null, name, buffer);
   }
 
-  return JSZipUtils.getBinaryContent("../examples/" + name, function (err, data) {
+  return PizZipUtils.getBinaryContent("../examples/" + name, function (err, data) {
     if (err) {
       return callback(err);
     }
@@ -439,9 +454,9 @@ function startsWith(str, suffix) {
 
 
 function start() {
-  /* eslint-disable dependencies/no-unresolved */
+  /* eslint-disable import/no-unresolved */
   var fileNames = require("./filenames.js");
-  /* eslint-enable dependencies/no-unresolved */
+  /* eslint-enable import/no-unresolved */
 
 
   fileNames.forEach(function (fullFileName) {
@@ -452,8 +467,8 @@ function start() {
       return;
     }
 
-    if (endsWith(fileName, ".docx") || endsWith(fileName, ".pptx")) {
-      callback = loadDocument;
+    if (endsWith(fileName, ".docx") || endsWith(fileName, ".pptx") || endsWith(fileName, ".xlsx")) {
+      callback = cacheDocument;
     }
 
     if (!callback) {
@@ -492,19 +507,25 @@ function removeSpaces(text) {
   return text.replace(/\n|\t/g, "");
 }
 
+var contentTypeContent = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\n  <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\n  <Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/>\n</Types>";
+
 function makeDocx(name, content) {
-  var zip = new JSZip();
+  var zip = new PizZip();
   zip.file("word/document.xml", content, {
     createFolders: true
   });
-  var base64 = zip.generate({
+  zip.file("[Content_Types].xml", contentTypeContent);
+  return load(name, zip.generate({
     type: "string"
-  });
-  return load(name, base64, "docx", docX);
+  }), documentCache);
 }
 
 function createDoc(name) {
-  return loadDocument(name, docX[name].loadedContent);
+  return loadDocument(name, documentCache[name].loadedContent);
+}
+
+function getLoadedContent(name) {
+  return documentCache[name].loadedContent;
 }
 
 function getContent(doc) {
@@ -532,6 +553,7 @@ module.exports = {
   cleanError: cleanError,
   cleanRecursive: cleanRecursive,
   createDoc: createDoc,
+  getLoadedContent: getLoadedContent,
   createXmlTemplaterDocx: createXmlTemplaterDocx,
   createXmlTemplaterDocxNoRender: createXmlTemplaterDocxNoRender,
   expect: expect,

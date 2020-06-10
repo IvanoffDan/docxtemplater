@@ -15,7 +15,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar");
   });
   it("should work with doublecontent in w:t", function () {
@@ -27,7 +26,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar, you're foo years old");
   });
   it("should work with {.} for this", function () {
@@ -36,7 +34,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar");
   });
   it("should work with {.} for this inside loop", function () {
@@ -47,7 +44,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar,John,");
   });
   it("should work with non w:t content", function () {
@@ -60,9 +56,7 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
-    var c = getContent(xmlTemplater);
-    expect(c).to.be.equal('<w:t xml:space="preserve">Hello edgar</w:t>');
+    expect(getContent(xmlTemplater)).to.be.equal('<w:t xml:space="preserve">Hello edgar</w:t>');
   });
   it("should handle <w:p/> in loop without error", function () {
     var content = "<w:p><w:r><w:t>{#ab}</w:t></w:r></w:p>\n    <w:p w14:paraId=\"79563C14\" w14:textId=\"77777777\" w:rsidR=\"00F22CAA\" w:rsidRDefault=\"00F22CAA\" w:rsidP=\"00324963\"/>\n    <w:p><w:r><w:t>{.}{/ab}</w:t></w:r></w:p>";
@@ -72,7 +66,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("123");
   });
   it("should work with tag in two elements", function () {
@@ -83,7 +76,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar");
   });
   it("should work with splitted tag in three elements", function () {
@@ -94,7 +86,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar");
   });
   it("should work with simple loop with object value", function () {
@@ -107,7 +98,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar");
   });
   it("should work with simple Loop", function () {
@@ -124,7 +114,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar,Mary,John,");
   });
   it("should work with simple Loop with boolean value truthy", function () {
@@ -136,7 +125,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar,");
   });
   it("should work with simple Loop with boolean value falsy", function () {
@@ -148,7 +136,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello ");
   });
   it("should work with dash Loop", function () {
@@ -165,7 +152,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar,Hello Mary,Hello John,");
   });
   it("should work with loop and innerContent", function () {
@@ -185,7 +171,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Everyone uses itProof that it works nicely : It works because it is quite cheap It works because it is quit simple It works because it works on a lot of different Hardware");
   });
   it("should work with loop and innerContent (with last)", function () {
@@ -205,7 +190,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Start Everyone uses itProof that it works nicely : It works because it is quite cheap It works because it is quit simple It works because it works on a lot of different Hardware End");
   });
   it("should work with not w:t tag (if the for loop is like {#forloop} text {/forloop}) ", function () {
@@ -224,7 +208,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(getContent(xmlTemplater)).to.be.equal('<w:t xml:space="preserve">Hello Edgar,Mary,John,</w:t>');
   });
   it("should work with delimiter in value", function () {
@@ -235,7 +218,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello {edgar}");
   });
   it("should work with delimiter in value with loop)", function () {
@@ -252,7 +234,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello {John},M}}{ary,Di{{{gory,");
   });
   it("should work when replacing with exact same value", function () {
@@ -263,7 +244,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     xmlTemplater.getFullText();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello {name}");
   });
@@ -278,7 +258,6 @@ describe("XmlTemplater", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("yMyBar*cos⁡( MyFoo+MyBaz)Hello John");
   });
 });
@@ -287,12 +266,13 @@ describe("Change the nullGetter", function () {
     var content = "<w:t>Hello {#names}{#foo}{bar}{/foo}{/names}</w:t>";
 
     function nullGetter(part, scopeManager) {
+      expect(part.value).to.equal("bar");
       expect(scopeManager.scopePath).to.deep.equal(["names", "foo"]);
       expect(scopeManager.scopePathItem).to.deep.equal([0, 0]);
       return "null";
     }
 
-    var xmlTemplater = createXmlTemplaterDocxNoRender(content, {
+    var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: {
         names: [{
           foo: [{}]
@@ -300,7 +280,6 @@ describe("Change the nullGetter", function () {
       },
       nullGetter: nullGetter
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello null");
   });
   it("should work with null in resolve", function () {
@@ -358,7 +337,6 @@ describe("Custom delimiters", function () {
       tags: scope,
       delimiters: delimiters
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar");
   });
   it("should work with custom delimiters with two chars", function () {
@@ -374,7 +352,6 @@ describe("Custom delimiters", function () {
       tags: scope,
       delimiters: delimiters
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.eql("Hello Edgar");
   });
   it("should work with custom delimiters as strings with different length", function () {
@@ -390,7 +367,6 @@ describe("Custom delimiters", function () {
       tags: scope,
       delimiters: delimiters
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.eql("Hello Edgar");
   });
   it("should work with custom tags and loops", function () {
@@ -406,7 +382,6 @@ describe("Custom delimiters", function () {
       tags: scope,
       delimiters: delimiters
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello Edgar,Mary,John,");
   });
   it("should work with loops", function () {
@@ -419,7 +394,7 @@ describe("Custom delimiters", function () {
           innertag: 5
         }]
       }
-    }).render();
+    });
     var c = getContent(xmlt);
     expect(c).to.be.equal('<w:t xml:space="preserve">10</w:t><w:t xml:space="preserve"> 5</w:t><w:t xml:space="preserve"> </w:t>');
   });
@@ -430,7 +405,7 @@ describe("Custom delimiters", function () {
         looptag: true,
         innertag: "foo"
       }
-    }).render();
+    });
     var c = getContent(xmlt);
     expect(c).not.to.contain("</w:t></w:t>");
     expect(c).to.be.equal('<w:t xml:space="preserve">foo</w:t><w:t/>');
@@ -443,7 +418,7 @@ describe("Custom delimiters", function () {
           name: "Henry"
         }]
       }
-    }).render();
+    });
     var c = getContent(xmlt);
     expect(c).to.contain("Henry</w:t>");
     expect(c).not.to.contain("</w:t>Henry</w:t>");
@@ -457,7 +432,7 @@ describe("getting parents context", function () {
         loop: [1],
         name: "Henry"
       }
-    }).render();
+    });
     var c = getContent(xmlt);
     expect(c).to.be.equal('<w:t xml:space="preserve">Henry</w:t>');
   });
@@ -471,7 +446,7 @@ describe("getting parents context", function () {
         }],
         name_outer: "Henry"
       }
-    }).render();
+    });
     var c = getContent(xmlt);
     expect(c).to.be.equal('<w:t xml:space="preserve">John Henry</w:t>');
   });

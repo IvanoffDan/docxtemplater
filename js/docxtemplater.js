@@ -11,6 +11,10 @@ var DocUtils = require("./doc-utils");
 DocUtils.traits = require("./traits");
 DocUtils.moduleWrapper = require("./module-wrapper");
 
+var commonModule = require("./modules/common");
+
+var ctXML = "[Content_Types].xml";
+
 var Lexer = require("./lexer");
 
 var defaults = DocUtils.defaults,
@@ -27,7 +31,7 @@ var _require = require("./errors"),
     throwFileTypeNotHandled = _require.throwFileTypeNotHandled,
     throwApiVersionError = _require.throwApiVersionError;
 
-var currentModuleApiVersion = [3, 10, 0];
+var currentModuleApiVersion = [3, 12, 0];
 
 var Docxtemplater =
 /*#__PURE__*/
@@ -40,7 +44,7 @@ function () {
     }
 
     this.compiled = {};
-    this.modules = [];
+    this.modules = [commonModule()];
     this.setOptions({});
   }
 
@@ -99,6 +103,11 @@ function () {
     key: "attachModule",
     value: function attachModule(module) {
       var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+      if (module.requiredAPIVersion) {
+        this.verifyApiVersion(module.requiredAPIVersion);
+      }
+
       var prefix = options.prefix;
 
       if (prefix) {
@@ -137,7 +146,7 @@ function () {
     key: "loadZip",
     value: function loadZip(zip) {
       if (zip.loadAsync) {
-        throw new XTInternalError("Docxtemplater doesn't handle JSZip version >=3, see changelog");
+        throw new XTInternalError("Docxtemplater doesn't handle JSZip version >=3, please use pizzip");
       }
 
       this.zip = zip;
@@ -205,19 +214,29 @@ function () {
   }, {
     key: "updateFileTypeConfig",
     value: function updateFileTypeConfig() {
+      var _this4 = this;
+
       var fileType;
 
       if (this.zip.files.mimetype) {
         fileType = "odt";
       }
 
-      if (this.zip.files["word/document.xml"] || this.zip.files["word/document2.xml"]) {
-        fileType = "docx";
-      }
-
-      if (this.zip.files["ppt/presentation.xml"]) {
-        fileType = "pptx";
-      }
+      var contentTypes = this.zip.files[ctXML];
+      this.targets = [];
+      var contentTypeXml = contentTypes ? str2xml(contentTypes.asText()) : null;
+      var overrides = contentTypeXml ? contentTypeXml.getElementsByTagName("Override") : null;
+      var defaults = contentTypeXml ? contentTypeXml.getElementsByTagName("Default") : null;
+      this.modules.forEach(function (module) {
+        fileType = module.getFileType({
+          zip: _this4.zip,
+          contentTypes: contentTypes,
+          contentTypeXml: contentTypeXml,
+          overrides: overrides,
+          defaults: defaults,
+          doc: _this4
+        }) || fileType;
+      });
 
       if (fileType === "odt") {
         throwFileTypeNotHandled(fileType);
@@ -228,13 +247,13 @@ function () {
       }
 
       this.fileType = fileType;
-      this.fileTypeConfig = this.options.fileTypeConfig || Docxtemplater.FileTypeConfig[this.fileType];
+      this.fileTypeConfig = this.options.fileTypeConfig || this.fileTypeConfig || Docxtemplater.FileTypeConfig[this.fileType];
       return this;
     }
   }, {
     key: "render",
     value: function render() {
-      var _this4 = this;
+      var _this5 = this;
 
       this.setModules({
         data: this.data,
@@ -247,14 +266,14 @@ function () {
       this.fileTypeConfig.tagsXmlLexedArray = unique(this.fileTypeConfig.tagsXmlLexedArray);
       this.fileTypeConfig.tagsXmlTextArray = unique(this.fileTypeConfig.tagsXmlTextArray);
       Object.keys(this.mapper).forEach(function (to) {
-        var _this4$mapper$to = _this4.mapper[to],
-            from = _this4$mapper$to.from,
-            data = _this4$mapper$to.data;
-        var currentFile = _this4.compiled[from];
+        var _this5$mapper$to = _this5.mapper[to],
+            from = _this5$mapper$to.from,
+            data = _this5$mapper$to.data;
+        var currentFile = _this5.compiled[from];
         currentFile.setTags(data);
         currentFile.render(to);
 
-        _this4.zip.file(to, currentFile.content, {
+        _this5.zip.file(to, currentFile.content, {
           createFolders: true
         });
       });
@@ -265,13 +284,13 @@ function () {
   }, {
     key: "syncZip",
     value: function syncZip() {
-      var _this5 = this;
+      var _this6 = this;
 
       Object.keys(this.xmlDocuments).forEach(function (fileName) {
-        _this5.zip.remove(fileName);
+        _this6.zip.remove(fileName);
 
-        var content = xml2str(_this5.xmlDocuments[fileName]);
-        return _this5.zip.file(fileName, content, {
+        var content = xml2str(_this6.xmlDocuments[fileName]);
+        return _this6.zip.file(fileName, content, {
           createFolders: true
         });
       });
@@ -296,13 +315,13 @@ function () {
   }, {
     key: "createTemplateClassFromContent",
     value: function createTemplateClassFromContent(content, filePath) {
-      var _this6 = this;
+      var _this7 = this;
 
       var xmltOptions = {
         filePath: filePath
       };
       Object.keys(defaults).forEach(function (key) {
-        xmltOptions[key] = _this6[key];
+        xmltOptions[key] = _this7[key];
       });
       xmltOptions.fileTypeConfig = this.fileTypeConfig;
       xmltOptions.modules = this.modules;
@@ -311,12 +330,17 @@ function () {
   }, {
     key: "getFullText",
     value: function getFullText(path) {
-      return this.createTemplateClass(path || this.fileTypeConfig.textPath(this.zip)).getFullText();
+      return this.createTemplateClass(path || this.fileTypeConfig.textPath(this)).getFullText();
     }
   }, {
     key: "getTemplatedFiles",
     value: function getTemplatedFiles() {
+      var _this8 = this;
+
       this.templatedFiles = this.fileTypeConfig.getTemplatedFiles(this.zip);
+      this.targets.forEach(function (target) {
+        _this8.templatedFiles.push(target);
+      });
       return this.templatedFiles;
     }
   }]);

@@ -12,29 +12,29 @@ var _require = require("./doc-utils"),
     isTagStart = _require.isTagStart,
     isTagEnd = _require.isTagEnd,
     isContent = _require.isContent,
-    last = _require.last;
+    last = _require.last,
+    first = _require.first;
 
 var _require2 = require("./errors"),
     XTTemplateError = _require2.XTTemplateError,
     throwRawTagNotInParagraph = _require2.throwRawTagNotInParagraph,
     getLoopPositionProducesInvalidXMLError = _require2.getLoopPositionProducesInvalidXMLError;
 
-function lastTagIsOpenTag(array, tag) {
-  if (array.length === 0) {
+function lastTagIsOpenTag(tags, tag) {
+  if (tags.length === 0) {
     return false;
   }
 
-  var lastTag = array[array.length - 1];
-  var innerLastTag = lastTag.tag.substr(1);
+  var innerLastTag = last(tags).tag.substr(1);
   var innerCurrentTag = tag.substr(2, tag.length - 3);
   return innerLastTag.indexOf(innerCurrentTag) === 0;
 }
 
-function addTag(array, tag) {
-  array.push({
+function addTag(tags, tag) {
+  tags.push({
     tag: tag
   });
-  return array;
+  return tags;
 }
 
 function getListXmlElements(parts) {
@@ -90,7 +90,8 @@ function getExpandToDefault(postparsed, pair, expandTags) {
   if (closingTagCount !== startingTagCount) {
     return {
       error: getLoopPositionProducesInvalidXMLError({
-        tag: pair[0].part.value
+        tag: first(pair).part.value,
+        offset: [first(pair).part.offset, last(pair).part.offset]
       })
     };
   }
@@ -126,7 +127,7 @@ function getExpandToDefault(postparsed, pair, expandTags) {
           return "continue";
         }
 
-        var firstChunk = chunks[0];
+        var firstChunk = first(chunks);
         var lastChunk = last(chunks);
         var firstContent = firstChunk.filter(isContent);
         var lastContent = lastChunk.filter(isContent);
@@ -170,8 +171,8 @@ function expandOne(part, postparsed, options) {
   var right, left;
 
   try {
-    right = getRight(postparsed, expandTo, index);
     left = getLeft(postparsed, expandTo, index);
+    right = getRight(postparsed, expandTo, index);
   } catch (rootError) {
     if (rootError instanceof XTTemplateError) {
       throwRawTagNotInParagraph({

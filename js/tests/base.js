@@ -4,7 +4,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-var JSZip = require("jszip");
+var PizZip = require("pizzip");
 
 var _require = require("lodash"),
     merge = _require.merge;
@@ -15,12 +15,15 @@ var Docxtemplater = require("../docxtemplater.js");
 
 var Errors = require("../errors.js");
 
-var _require2 = require("./utils"),
-    expect = _require2.expect,
-    createXmlTemplaterDocx = _require2.createXmlTemplaterDocx,
-    createDoc = _require2.createDoc,
-    expectToThrow = _require2.expectToThrow,
-    getContent = _require2.getContent;
+var _require2 = require("../utils.js"),
+    last = _require2.last;
+
+var _require3 = require("./utils"),
+    expect = _require3.expect,
+    createXmlTemplaterDocx = _require3.createXmlTemplaterDocx,
+    createDoc = _require3.createDoc,
+    expectToThrow = _require3.expectToThrow,
+    getContent = _require3.getContent;
 
 var inspectModule = require("../inspect-module.js");
 
@@ -64,12 +67,12 @@ describe("Loading", function () {
     it("should load the right template files for the document", function () {
       var doc = createDoc("tag-example.docx");
       var templatedFiles = doc.getTemplatedFiles();
-      expect(templatedFiles).to.be.eql(["word/header1.xml", "word/footer1.xml", "docProps/core.xml", "docProps/app.xml", "word/document.xml", "word/document2.xml"]);
+      expect(templatedFiles.sort()).to.be.eql(["word/header1.xml", "word/footer1.xml", "docProps/core.xml", "docProps/app.xml", "word/document.xml"].sort());
     });
   });
   describe("output and input", function () {
     it("should be the same", function () {
-      var zip = new JSZip(createDoc("tag-example.docx").loadedContent);
+      var zip = new PizZip(createDoc("tag-example.docx").loadedContent);
       var doc = new Docxtemplater().loadZip(zip);
       var output = doc.getZip().generate({
         type: "base64"
@@ -94,7 +97,7 @@ describe("Api versioning", function () {
       name: "APIVersionError",
       properties: {
         id: "api_version_error",
-        currentModuleApiVersion: [3, 10, 0],
+        currentModuleApiVersion: [3, 12, 0],
         neededVersion: [5, 6, 0]
       }
     });
@@ -103,7 +106,7 @@ describe("Api versioning", function () {
       name: "APIVersionError",
       properties: {
         id: "api_version_error",
-        currentModuleApiVersion: [3, 10, 0],
+        currentModuleApiVersion: [3, 12, 0],
         neededVersion: [3, 44, 0]
       }
     });
@@ -149,7 +152,7 @@ describe("Inspect module", function () {
         name: {}
       }
     });
-    expect(iModule.getTemplatedFiles()).to.be.deep.equal(["ppt/slides/slide1.xml", "ppt/slides/slide2.xml", "ppt/slideMasters/slideMaster1.xml", "ppt/presentation.xml", "docProps/app.xml", "docProps/core.xml"]);
+    expect(iModule.getTemplatedFiles().sort()).to.be.deep.equal(["ppt/slides/slide1.xml", "ppt/slides/slide2.xml", "ppt/slideMasters/slideMaster1.xml", "ppt/presentation.xml", "docProps/app.xml", "docProps/core.xml"].sort());
   });
   it("should get all tags and merge them", function () {
     var doc = createDoc("multi-page-to-merge.pptx");
@@ -320,7 +323,6 @@ describe("Docxtemplater loops", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     expect(getContent(xmlTemplater)).to.be.deep.equal(expectedContent);
   });
   it("should work with string value", function () {
@@ -332,7 +334,6 @@ describe("Docxtemplater loops", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     var c = getContent(xmlTemplater);
     expect(c).to.be.deep.equal(expectedContent);
   });
@@ -370,7 +371,6 @@ describe("Docxtemplater loops", function () {
       var doc = createXmlTemplaterDocx(content, {
         tags: tags
       });
-      doc.render();
       expect(doc.getFullText()).to.be.equal("No products found");
     });
     [{
@@ -389,7 +389,6 @@ describe("Docxtemplater loops", function () {
       var doc = createXmlTemplaterDocx(content, {
         tags: tags
       });
-      doc.render();
       expect(doc.getFullText()).to.be.equal("");
     });
   });
@@ -403,7 +402,6 @@ describe("Docxtemplater loops", function () {
     var doc = createXmlTemplaterDocx(content, {
       tags: tags
     });
-    doc.render();
     expect(doc.getFullText()).to.be.equal("Product Bread");
   });
   it("should be possible to close double loops with {/}", function () {
@@ -418,7 +416,6 @@ describe("Docxtemplater loops", function () {
     var doc = createXmlTemplaterDocx(content, {
       tags: tags
     });
-    doc.render();
     expect(doc.getFullText()).to.be.equal("Product Bread");
   });
   it("should work with complex loops", function () {
@@ -435,7 +432,6 @@ describe("Docxtemplater loops", function () {
     var doc = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    doc.render();
     expect(doc.getFullText()).to.be.equal("###Title###  John Doe friends are :  Jane, Henry,  Default friends are :  None, ");
   });
 });
@@ -456,12 +452,11 @@ describe("Changing the parser", function () {
       tags: scope,
       parser: parser
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello EDGAR");
   });
   it("should work when setting from the Docxtemplater interface", function () {
     var doc = createDoc("tag-example.docx");
-    var zip = new JSZip(doc.loadedContent);
+    var zip = new PizZip(doc.loadedContent);
     var d = new Docxtemplater().loadZip(zip);
     var tags = {
       first_name: "Hipp",
@@ -511,7 +506,6 @@ describe("Changing the parser", function () {
       tags: scope,
       parser: angularParser
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello you");
   });
   it("should be able to access meta to get the index", function () {
@@ -529,8 +523,7 @@ describe("Changing the parser", function () {
         return {
           get: function get(scope, context) {
             if (tag === "$index") {
-              var indexes = context.scopePathItem;
-              return indexes[indexes.length - 1];
+              return last(context.scopePathItem);
             }
 
             return scope[tag];
@@ -538,8 +531,53 @@ describe("Changing the parser", function () {
         };
       }
     });
-    xmlTemplater.render();
     expect(xmlTemplater.getFullText()).to.be.equal("Hello 0 Jane 1 Mary ");
+  });
+  it("should be able to have scopePathItem with different lengths when having conditions", function () {
+    var content = "<w:t>{#cond}{name}{/}</w:t>";
+    var scope = {
+      cond: true,
+      name: "John"
+    };
+    var innerContext = null;
+    var xmlTemplater = createXmlTemplaterDocx(content, {
+      tags: scope,
+      parser: function parser(tag) {
+        return {
+          get: function get(scope, context) {
+            if (tag === "name") {
+              innerContext = context;
+            }
+
+            return scope[tag];
+          }
+        };
+      }
+    });
+    expect(xmlTemplater.getFullText()).to.be.equal("John");
+    expect(innerContext.scopePath).to.be.deep.equal(["cond"]);
+    expect(innerContext.scopePathItem).to.be.deep.equal([0]);
+    expect(innerContext.scopeList.length).to.be.equal(2);
+    expect(innerContext.scopeList[0]).to.be.deep.equal(innerContext.scopeList[1]);
+  });
+  it("should call the parser just once", function () {
+    var calls = 0;
+    var content = "<w:t>{name}</w:t>";
+    var scope = {
+      name: "John"
+    };
+    createXmlTemplaterDocx(content, {
+      tags: scope,
+      parser: function parser(tag) {
+        return {
+          get: function get(scope) {
+            calls++;
+            return scope[tag];
+          }
+        };
+      }
+    });
+    expect(calls).to.equal(1);
   });
   it("should be able to access meta to get the type of tag", function () {
     var content = "<w:p><w:t>Hello {#users}{name}{/users}</w:t></w:p>\n\t\t<w:p><w:t>{@rrr}</w:t></w:p>\n\t\t";
@@ -558,8 +596,7 @@ describe("Changing the parser", function () {
             contexts.push(context);
 
             if (tag === "$index") {
-              var indexes = context.scopePathItem;
-              return indexes[indexes.length - 1];
+              return last(context.scopePathItem);
             }
 
             return scope[tag];
@@ -609,6 +646,22 @@ describe("Change the delimiters", function () {
     doc.render();
     var fullText = doc.getFullText();
     expect(fullText).to.be.equal("Hello John");
+  });
+  it("should work with delimiter % both sides", function () {
+    var doc = createDoc("delimiter-pct.docx");
+    doc.setOptions({
+      delimiters: {
+        start: "%",
+        end: "%"
+      }
+    });
+    doc.setData({
+      user: "John",
+      company: "PCorp"
+    });
+    doc.render();
+    var fullText = doc.getFullText();
+    expect(fullText).to.be.equal("Hello John from PCorp");
   });
 });
 describe("Special characters", function () {
@@ -666,7 +719,7 @@ describe("Special characters", function () {
   it("should insert russian characters", function () {
     var russian = "Пупкина";
     var doc = createDoc("tag-example.docx");
-    var zip = new JSZip(doc.loadedContent);
+    var zip = new PizZip(doc.loadedContent);
     var d = new Docxtemplater().loadZip(zip);
     d.setData({
       last_name: russian
@@ -689,7 +742,6 @@ describe("Complex table example", function () {
       var doc = createXmlTemplaterDocx(content, {
         tags: scope
       });
-      doc.render();
       var c = getContent(doc);
       expect(c).to.be.equal("<w:t/>\n<w:table><w:tr><w:tc>\n<w:t xml:space=\"preserve\">John</w:t>\n</w:tc></w:tr></w:table>\n<w:t/>\n<w:table><w:tr><w:tc>\n<w:t xml:space=\"preserve\">Jane</w:t>\n</w:tc></w:tr></w:table>\n<w:t/>");
     });
@@ -703,7 +755,6 @@ describe("Complex table example", function () {
     var doc = createXmlTemplaterDocx(template, {
       tags: tags
     });
-    doc.render();
     var fullText = doc.getFullText();
     expect(fullText).to.be.equal("HiHovalue");
     var expected = "<w:tr>\n\t\t<w:tc><w:t xml:space=\"preserve\">Hi</w:t></w:tc>\n\t\t<w:tc><w:t/> </w:tc>\n\t\t</w:tr>\n\t\t<w:tr>\n\t\t<w:tc><w:p><w:t xml:space=\"preserve\">Ho</w:t></w:p></w:tc>\n\t\t<w:tc><w:p><w:t/></w:p></w:tc>\n\t\t</w:tr>\n\t\t<w:t xml:space=\"preserve\">value</w:t>\n\t\t";
@@ -721,7 +772,6 @@ describe("Raw Xml Insertion", function () {
     var doc = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    doc.render();
     var c = getContent(doc);
     expect(c.length).to.be.equal(content.length + scope.complexXml.length - inner.length);
     expect(c).to.contain(scope.complexXml);
@@ -749,7 +799,6 @@ describe("Raw Xml Insertion", function () {
     var doc = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    doc.render();
     var c = getContent(doc);
     expect(c).to.contain(scope.complexXml);
     expect(doc.getFullText()).to.be.equal("HelloJohnDoe 1550MotoFein 1987WaterTest 2010BreadYu");
@@ -764,7 +813,6 @@ describe("Raw Xml Insertion", function () {
     var xmlTemplater = createXmlTemplaterDocx(content, {
       tags: scope
     });
-    xmlTemplater.render();
     var c = getContent(xmlTemplater);
     expect(c).not.to.contain("</w:t></w:t>");
   });
