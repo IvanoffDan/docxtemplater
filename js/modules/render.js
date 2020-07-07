@@ -16,7 +16,7 @@ var _require2 = require("../doc-utils"),
     hasCorruptCharacters = _require2.hasCorruptCharacters;
 
 var _require3 = require("../errors"),
-    throwCorruptCharacters = _require3.throwCorruptCharacters;
+    getCorruptCharactersException = _require3.getCorruptCharactersException;
 
 var ftprefix = {
   docx: "w",
@@ -82,7 +82,8 @@ function () {
           } catch (rootError) {
             errors.push(getScopeCompilationError({
               tag: tag,
-              rootError: rootError
+              rootError: rootError,
+              offset: p.offset
             }));
           }
         }
@@ -123,42 +124,60 @@ function () {
         this.recordRuns(part);
       }
 
-      if (part.type === "placeholder" && !part.module) {
-        var value = scopeManager.getValue(part.value, {
+      if (part.type !== "placeholder" || part.module) {
+        return;
+      }
+
+      var value;
+
+      try {
+        value = scopeManager.getValue(part.value, {
           part: part
         });
-
-        if (value == null) {
-          value = nullGetter(part);
-        }
-
-        if (hasCorruptCharacters(value)) {
-          throwCorruptCharacters({
-            tag: part.value,
-            value: value
-          });
-        }
-
-        if (typeof value !== "string") {
-          value = value.toString();
-        }
-
-        if (linebreaks) {
-          var p = ftprefix[this.fileType];
-          var br = this.fileType === "docx" ? "<w:r><w:br/></w:r>" : "<a:br/>";
-          var lines = value.split("\n");
-          var runprops = this.recordedRun.join("");
-          return {
-            value: lines.map(function (line) {
-              return utf8ToWord(line);
-            }).join("</".concat(p, ":t></").concat(p, ":r>").concat(br, "<").concat(p, ":r>").concat(runprops, "<").concat(p, ":t").concat(this.fileType === "docx" ? ' xml:space="preserve"' : "", ">"))
-          };
-        }
-
+      } catch (e) {
         return {
-          value: utf8ToWord(value)
+          errors: [e]
         };
       }
+
+      if (value == null) {
+        value = nullGetter(part);
+      }
+
+      if (hasCorruptCharacters(value)) {
+        return {
+          errors: [getCorruptCharactersException({
+            tag: part.value,
+            value: value,
+            offset: part.offset
+          })]
+        };
+      }
+
+      if (typeof value !== "string") {
+        value = value.toString();
+      }
+
+      if (linebreaks) {
+        return this.renderLineBreaks(value);
+      }
+
+      return {
+        value: utf8ToWord(value)
+      };
+    }
+  }, {
+    key: "renderLineBreaks",
+    value: function renderLineBreaks(value) {
+      var p = ftprefix[this.fileType];
+      var br = this.fileType === "docx" ? "<w:r><w:br/></w:r>" : "<a:br/>";
+      var lines = value.split("\n");
+      var runprops = this.recordedRun.join("");
+      return {
+        value: lines.map(function (line) {
+          return utf8ToWord(line);
+        }).join("</".concat(p, ":t></").concat(p, ":r>").concat(br, "<").concat(p, ":r>").concat(runprops, "<").concat(p, ":t").concat(this.fileType === "docx" ? ' xml:space="preserve"' : "", ">"))
+      };
     }
   }]);
 

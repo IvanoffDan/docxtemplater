@@ -1,5 +1,13 @@
 "use strict";
 
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
@@ -10,6 +18,9 @@ var _require = require("./errors"),
     getScopeParserExecutionError = _require.getScopeParserExecutionError;
 
 var get = require("lodash/get");
+
+var _require2 = require("./utils"),
+    last = _require2.last;
 
 function find(list, fn) {
   var length = list.length >>> 0;
@@ -29,8 +40,7 @@ function find(list, fn) {
 function _getValue(tag, meta, num) {
   var _this = this;
 
-  this.num = num;
-  var scope = this.scopeList[this.num];
+  var scope = this.scopeList[num];
 
   if (this.resolved) {
     var w = this.resolved;
@@ -41,9 +51,9 @@ function _getValue(tag, meta, num) {
       });
       w = w.value[_this.scopePathItem[index]];
     });
-    return find(w, function (r) {
+    return [this.scopePath.length - 1, find(w, function (r) {
       return meta.part.lIndex === r.lIndex;
-    }).value;
+    }).value];
   } // <<<<<<<<<<< CBX
   // replace .item with array index for CBX loops
 
@@ -62,32 +72,32 @@ function _getValue(tag, meta, num) {
   });
 
   try {
-    result = parser.get(scope, this.getContext(meta));
+    result = parser.get(scope, this.getContext(meta, num));
   } catch (error) {
     throw getScopeParserExecutionError({
-      processedTag: processedTag,
+      tag: processedTag,
       scope: scope,
-      error: error
+      error: error,
+      offset: meta.part.offset
     });
   }
 
-  if (result == null && this.num > 0) {
+  if (result == null && num > 0) {
     return _getValue.call(this, processedTag, meta, num - 1);
   }
 
-  return result;
+  return [num, result];
 }
 
 function _getValueAsync(tag, meta, num) {
   var _this2 = this;
 
-  this.num = num;
-  var scope = this.scopeList[this.num]; // search in the scopes (in reverse order) and keep the first defined value
+  var scope = this.scopeList[num]; // search in the scopes (in reverse order) and keep the first defined value
 
   var parser = this.parser(tag, {
     scopePath: this.scopePath
   });
-  return Promise.resolve(parser.get(scope, this.getContext(meta))).catch(function (error) {
+  return Promise.resolve(parser.get(scope, this.getContext(meta, num)))["catch"](function (error) {
     throw getScopeParserExecutionError({
       tag: tag,
       scope: scope,
@@ -158,10 +168,9 @@ function () {
       }
 
       var type = Object.prototype.toString.call(value);
-      var currentValue = this.scopeList[this.num];
 
       if (this.isValueFalsy(value, type)) {
-        return this.functorIfInverted(inverted, functor, currentValue, 0);
+        return this.functorIfInverted(inverted, functor, last(this.scopeList), 0);
       } // Handle CBX loop scope to equal parent scope
 
 
@@ -174,9 +183,8 @@ function () {
       }
 
       if (type === "[object Array]") {
-        for (var _i = 0, scope; _i < value.length; _i++) {
-          scope = value[_i];
-          this.functorIfInverted(!inverted, functor, scope, _i);
+        for (var _i = 0; _i < value.length; _i++) {
+          this.functorIfInverted(!inverted, functor, value[_i], _i);
         }
 
         return true;
@@ -186,25 +194,29 @@ function () {
         return this.functorIfInverted(!inverted, functor, value, 0);
       }
 
-      return this.functorIfInverted(!inverted, functor, currentValue, 0);
+      return this.functorIfInverted(!inverted, functor, last(this.scopeList), 0);
     }
   }, {
     key: "getValue",
     value: function getValue(tag, meta) {
-      var num = this.scopeList.length - 1;
-      return _getValue.call(this, tag, meta, num);
+      var _getValue$call = _getValue.call(this, tag, meta, this.scopeList.length - 1),
+          _getValue$call2 = _slicedToArray(_getValue$call, 2),
+          num = _getValue$call2[0],
+          result = _getValue$call2[1];
+
+      this.num = num;
+      return result;
     }
   }, {
     key: "getValueAsync",
     value: function getValueAsync(tag, meta) {
-      var num = this.scopeList.length - 1;
-      return _getValueAsync.call(this, tag, meta, num);
+      return _getValueAsync.call(this, tag, meta, this.scopeList.length - 1);
     }
   }, {
     key: "getContext",
-    value: function getContext(meta) {
+    value: function getContext(meta, num) {
       return {
-        num: this.num,
+        num: num,
         meta: meta,
         scopeList: this.scopeList,
         resolved: this.resolved,

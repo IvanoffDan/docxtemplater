@@ -4,7 +4,7 @@ function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArra
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
 
-function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
@@ -19,6 +19,7 @@ var _require2 = require("./doc-utils"),
     isTextStart = _require2.isTextStart,
     isTextEnd = _require2.isTextEnd;
 
+var NONE = -2;
 var EQUAL = 0;
 var START = -1;
 var END = 1;
@@ -48,20 +49,31 @@ function updateInTextTag(part, inTextTag) {
 }
 
 function getTag(tag) {
-  var position = "start";
+  var position = "";
   var start = 1;
+  var end = tag.indexOf(" ");
 
   if (tag[tag.length - 2] === "/") {
     position = "selfclosing";
-  }
 
-  if (tag[1] === "/") {
+    if (end === -1) {
+      end = tag.length - 2;
+    }
+  } else if (tag[1] === "/") {
     start = 2;
     position = "end";
+
+    if (end === -1) {
+      end = tag.length - 1;
+    }
+  } else {
+    position = "start";
+
+    if (end === -1) {
+      end = tag.length - 1;
+    }
   }
 
-  var index = tag.indexOf(" ");
-  var end = index === -1 ? tag.length - 1 : index;
   return {
     tag: tag.slice(start, end),
     position: position
@@ -187,6 +199,10 @@ function getDelimiterErrors(delimiterMatches, fullText, ranges) {
 }
 
 function compareOffsets(startOffset, endOffset) {
+  if (startOffset === -1 && endOffset === -1) {
+    return NONE;
+  }
+
   if (startOffset === endOffset) {
     return EQUAL;
   }
@@ -221,6 +237,7 @@ function getAllIndexes(fullText, delimiters) {
   var start = delimiters.start,
       end = delimiters.end;
   var offset = -1;
+  var insideTag = false;
 
   while (true) {
     var startOffset = fullText.indexOf(start, offset + 1);
@@ -229,17 +246,27 @@ function getAllIndexes(fullText, delimiters) {
     var len = void 0;
     var compareResult = compareOffsets(startOffset, endOffset);
 
-    if (compareResult === EQUAL) {
+    if (compareResult === NONE) {
       return indexes;
     }
 
+    if (compareResult === EQUAL) {
+      if (!insideTag) {
+        compareResult = START;
+      } else {
+        compareResult = END;
+      }
+    }
+
     if (compareResult === END) {
+      insideTag = false;
       offset = endOffset;
       position = "end";
       len = end.length;
     }
 
     if (compareResult === START) {
+      insideTag = true;
       offset = startOffset;
       position = "start";
       len = start.length;
@@ -262,9 +289,10 @@ function getAllIndexes(fullText, delimiters) {
         length: end.length,
         changedelimiter: true
       });
-      var insideTag = fullText.substr(offset + start.length + 1, nextEqual - offset - start.length - 1);
 
-      var _splitDelimiters = splitDelimiters(insideTag);
+      var _insideTag = fullText.substr(offset + start.length + 1, nextEqual - offset - start.length - 1);
+
+      var _splitDelimiters = splitDelimiters(_insideTag);
 
       var _splitDelimiters2 = _slicedToArray(_splitDelimiters, 2);
 
@@ -282,104 +310,98 @@ function getAllIndexes(fullText, delimiters) {
   }
 }
 
-function Reader(innerContentParts) {
-  var _this = this;
+function parseDelimiters(innerContentParts, delimiters) {
+  var full = innerContentParts.map(function (p) {
+    return p.value;
+  }).join("");
+  var delimiterMatches = getAllIndexes(full, delimiters);
+  var offset = 0;
+  var ranges = innerContentParts.map(function (part) {
+    offset += part.value.length;
+    return {
+      offset: offset - part.value.length,
+      lIndex: part.lIndex
+    };
+  });
+  var errors = getDelimiterErrors(delimiterMatches, full, ranges);
+  var cutNext = 0;
+  var delimiterIndex = 0;
+  var parsed = ranges.map(function (p, i) {
+    var offset = p.offset;
+    var range = [offset, offset + innerContentParts[i].value.length];
+    var partContent = innerContentParts[i].value;
+    var delimitersInOffset = [];
 
-  this.innerContentParts = innerContentParts;
-  this.full = "";
+    while (delimiterIndex < delimiterMatches.length && inRange(range, delimiterMatches[delimiterIndex])) {
+      delimitersInOffset.push(delimiterMatches[delimiterIndex]);
+      delimiterIndex++;
+    }
 
-  this.parseDelimiters = function (delimiters) {
-    _this.full = _this.innerContentParts.map(function (p) {
-      return p.value;
-    }).join("");
-    var delimiterMatches = getAllIndexes(_this.full, delimiters);
-    var offset = 0;
+    var parts = [];
+    var cursor = 0;
 
-    var ranges = _this.innerContentParts.map(function (part) {
-      offset += part.value.length;
-      return {
-        offset: offset - part.value.length,
-        lIndex: part.lIndex
-      };
-    });
+    if (cutNext > 0) {
+      cursor = cutNext;
+      cutNext = 0;
+    }
 
-    var errors = getDelimiterErrors(delimiterMatches, _this.full, ranges);
-    var cutNext = 0;
-    var delimiterIndex = 0;
-    _this.parsed = ranges.map(function (p, i) {
-      var offset = p.offset;
-      var range = [offset, offset + this.innerContentParts[i].value.length];
-      var partContent = this.innerContentParts[i].value;
-      var delimitersInOffset = [];
+    var insideDelimiterChange;
+    delimitersInOffset.forEach(function (delimiterInOffset) {
+      var value = partContent.substr(cursor, delimiterInOffset.offset - offset - cursor);
 
-      while (delimiterIndex < delimiterMatches.length && inRange(range, delimiterMatches[delimiterIndex])) {
-        delimitersInOffset.push(delimiterMatches[delimiterIndex]);
-        delimiterIndex++;
-      }
-
-      var parts = [];
-      var cursor = 0;
-
-      if (cutNext > 0) {
-        cursor = cutNext;
-        cutNext = 0;
-      }
-
-      var insideDelimiterChange;
-      delimitersInOffset.forEach(function (delimiterInOffset) {
-        var value = partContent.substr(cursor, delimiterInOffset.offset - offset - cursor);
-
-        if (value.length > 0) {
-          if (insideDelimiterChange) {
-            if (delimiterInOffset.changedelimiter) {
-              cursor = delimiterInOffset.offset - offset + delimiterInOffset.length;
-              insideDelimiterChange = delimiterInOffset.position === "start";
-            }
-
-            return;
+      if (value.length > 0) {
+        if (insideDelimiterChange) {
+          if (delimiterInOffset.changedelimiter) {
+            cursor = delimiterInOffset.offset - offset + delimiterInOffset.length;
+            insideDelimiterChange = delimiterInOffset.position === "start";
           }
 
-          parts.push({
-            type: "content",
-            value: value,
-            offset: cursor + offset
-          });
-          cursor += value.length;
-        }
-
-        var delimiterPart = {
-          type: "delimiter",
-          position: delimiterInOffset.position,
-          offset: cursor + offset
-        };
-
-        if (delimiterInOffset.error) {
-          delimiterPart.error = delimiterInOffset.error;
-        }
-
-        if (delimiterInOffset.changedelimiter) {
-          insideDelimiterChange = delimiterInOffset.position === "start";
-          cursor = delimiterInOffset.offset - offset + delimiterInOffset.length;
           return;
         }
 
-        parts.push(delimiterPart);
-        cursor = delimiterInOffset.offset - offset + delimiterInOffset.length;
-      });
-      cutNext = cursor - partContent.length;
-      var value = partContent.substr(cursor);
-
-      if (value.length > 0) {
         parts.push({
           type: "content",
           value: value,
-          offset: offset
+          offset: cursor + offset
         });
+        cursor += value.length;
       }
 
-      return parts;
-    }, _this);
-    _this.errors = errors;
+      var delimiterPart = {
+        type: "delimiter",
+        position: delimiterInOffset.position,
+        offset: cursor + offset
+      };
+
+      if (delimiterInOffset.error) {
+        delimiterPart.error = delimiterInOffset.error;
+      }
+
+      if (delimiterInOffset.changedelimiter) {
+        insideDelimiterChange = delimiterInOffset.position === "start";
+        cursor = delimiterInOffset.offset - offset + delimiterInOffset.length;
+        return;
+      }
+
+      parts.push(delimiterPart);
+      cursor = delimiterInOffset.offset - offset + delimiterInOffset.length;
+    });
+    cutNext = cursor - partContent.length;
+    var value = partContent.substr(cursor);
+
+    if (value.length > 0) {
+      parts.push({
+        type: "content",
+        value: value,
+        offset: offset
+      });
+    }
+
+    return parts;
+  }, this);
+  return {
+    parsed: parsed,
+    errors: errors
   };
 }
 
@@ -397,10 +419,14 @@ function getContentParts(xmlparsed) {
 }
 
 module.exports = {
+  parseDelimiters: parseDelimiters,
   parse: function parse(xmlparsed, delimiters) {
     var inTextTag = false;
-    var reader = new Reader(getContentParts(xmlparsed));
-    reader.parseDelimiters(delimiters);
+
+    var _parseDelimiters = parseDelimiters(getContentParts(xmlparsed), delimiters),
+        delimiterParsed = _parseDelimiters.parsed,
+        errors = _parseDelimiters.errors;
+
     var lexed = [];
     var index = 0;
     xmlparsed.forEach(function (part) {
@@ -411,7 +437,7 @@ module.exports = {
       }
 
       if (inTextTag && part.type === "content") {
-        Array.prototype.push.apply(lexed, reader.parsed[index].map(function (p) {
+        Array.prototype.push.apply(lexed, delimiterParsed[index].map(function (p) {
           if (p.type === "content") {
             p.position = "insidetag";
           }
@@ -428,7 +454,7 @@ module.exports = {
       return p;
     });
     return {
-      errors: reader.errors,
+      errors: errors,
       lexed: lexed
     };
   },

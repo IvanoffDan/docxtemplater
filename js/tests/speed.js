@@ -3,7 +3,7 @@
 var _require = require("./utils"),
     createDoc = _require.createDoc,
     expect = _require.expect,
-    createXmlTemplaterDocx = _require.createXmlTemplaterDocx;
+    createXmlTemplaterDocxNoRender = _require.createXmlTemplaterDocxNoRender;
 
 var _require2 = require("lodash"),
     times = _require2.times;
@@ -16,7 +16,7 @@ describe("Speed test", function () {
     var docs = [];
 
     for (var i = 0; i < 100; i++) {
-      docs.push(createXmlTemplaterDocx(content, {
+      docs.push(createXmlTemplaterDocxNoRender(content, {
         tags: {
           age: 12
         }
@@ -46,7 +46,7 @@ describe("Speed test", function () {
     var docs = [];
 
     for (i = 0; i < 20; i++) {
-      docs.push(createXmlTemplaterDocx(content, {
+      docs.push(createXmlTemplaterDocxNoRender(content, {
         tags: {
           age: 12
         }
@@ -72,7 +72,7 @@ describe("Speed test", function () {
       });
     }
 
-    var doc = createXmlTemplaterDocx(content, {
+    var doc = createXmlTemplaterDocxNoRender(content, {
       tags: {
         users: users
       }
@@ -101,24 +101,33 @@ describe("Speed test", function () {
 
       var content = result.join("");
       var users = [];
-      var doc = createXmlTemplaterDocx(content, {
+      var doc = createXmlTemplaterDocxNoRender(content, {
         tags: {
           users: users
         }
       });
-      var time = new Date();
+      var now = new Date();
+      doc.compile();
+      var compileDuration = new Date() - now;
+
+      if (typeof window === "undefined") {
+        // Skip this assertion in the browser
+        expect(compileDuration).to.be.below(5000);
+      }
+
+      now = new Date();
       doc.render();
-      var duration = new Date() - time;
+      var duration = new Date() - now;
       expect(duration).to.be.below(25000);
     });
     describe("Inspect module", function () {
       it("should not be slow after multiple generations", function () {
-        var time = new Date();
-        var doc;
+        var duration = 0;
         var iModule = inspectModule();
 
         for (var i = 0; i < 10; i++) {
-          doc = createDoc("tag-product-loop.docx");
+          var doc = createDoc("tag-product-loop.docx");
+          var startTime = new Date();
           doc.attachModule(iModule);
           var data = {
             nom: "Doe",
@@ -135,9 +144,9 @@ describe("Speed test", function () {
           doc.setData(data);
           doc.compile();
           doc.render();
+          duration += new Date() - startTime;
         }
 
-        var duration = new Date() - time;
         expect(duration).to.be.below(750);
       });
     });
