@@ -3,6 +3,7 @@
 const { DOMParser, XMLSerializer } = require("xmldom");
 const { throwXmlTagNotFound } = require("./errors");
 const get = require("lodash/get");
+const { last, first } = require("./utils");
 
 const expressions = require("angular-expressions");
 
@@ -49,10 +50,7 @@ function getNearestLeft(parsed, elements, index) {
 		const part = parsed[i];
 		for (let j = 0, len = elements.length; j < len; j++) {
 			const element = elements[j];
-			if (
-				part.value.indexOf("<" + element) === 0 &&
-				[">", " "].indexOf(part.value[element.length + 1]) !== -1
-			) {
+			if (isStarting(part.value, element)) {
 				return elements[j];
 			}
 		}
@@ -65,7 +63,7 @@ function getNearestRight(parsed, elements, index) {
 		const part = parsed[i];
 		for (let j = 0, len = elements.length; j < len; j++) {
 			const element = elements[j];
-			if (part.value === "</" + element + ">") {
+			if (isEnding(part.value, element)) {
 				return elements[j];
 			}
 		}
@@ -97,11 +95,11 @@ function chunkBy(parsed, f) {
 		.reduce(
 			function(chunks, p) {
 				const currentChunk = last(chunks);
+				const res = f(p);
 				if (currentChunk.length === 0) {
 					currentChunk.push(p);
 					return chunks;
 				}
-				const res = f(p);
 				if (res === "start") {
 					chunks.push([p]);
 				} else if (res === "end") {
@@ -117,10 +115,6 @@ function chunkBy(parsed, f) {
 		.filter(function(p) {
 			return p.length > 0;
 		});
-}
-
-function last(a) {
-	return a[a.length - 1];
 }
 
 const defaults = {
@@ -161,6 +155,10 @@ function xml2str(xmlNode) {
 }
 
 function str2xml(str) {
+	if (str.charCodeAt(0) === 65279) {
+		// BOM sequence
+		str = str.substr(1);
+	}
 	const parser = new DOMParser();
 	return parser.parseFromString(str, "text/xml");
 }
@@ -173,9 +171,9 @@ const charMap = {
 	'"': "&quot;",
 };
 
-const regexStripRegexp = /[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g;
 function escapeRegExp(str) {
-	return str.replace(regexStripRegexp, "\\$&");
+	// to be able to use a string as a regex
+	return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 const charMapRegexes = Object.keys(charMap).map(function(endChar) {
@@ -239,6 +237,17 @@ returns: [{array: {0: 'la'},offset: 2},{array: {0: 'la'},offset: 8},{array: {0: 
 	return matchArray;
 }
 
+function isEnding(value, element) {
+	return value === "</" + element + ">";
+}
+
+function isStarting(value, element) {
+	return (
+		value.indexOf("<" + element) === 0 &&
+		[">", " "].indexOf(value[element.length + 1]) !== -1
+	);
+}
+
 function getRight(parsed, element, index) {
 	const val = getRightOrNull(parsed, element, index);
 	if (val !== null) {
@@ -251,11 +260,18 @@ function getRightOrNull(parsed, elements, index) {
 	if (typeof elements === "string") {
 		elements = [elements];
 	}
+	let level = 1;
 	for (let i = index, l = parsed.length; i < l; i++) {
 		const part = parsed[i];
 		for (let j = 0, len = elements.length; j < len; j++) {
 			const element = elements[j];
-			if (part.value === "</" + element + ">") {
+			if (isEnding(part.value, element)) {
+				level--;
+			}
+			if (isStarting(part.value, element)) {
+				level++;
+			}
+			if (level === 0) {
 				return i;
 			}
 		}
@@ -275,14 +291,18 @@ function getLeftOrNull(parsed, elements, index) {
 	if (typeof elements === "string") {
 		elements = [elements];
 	}
+	let level = 1;
 	for (let i = index; i >= 0; i--) {
 		const part = parsed[i];
 		for (let j = 0, len = elements.length; j < len; j++) {
 			const element = elements[j];
-			if (
-				part.value.indexOf("<" + element) === 0 &&
-				[">", " "].indexOf(part.value[element.length + 1]) !== -1
-			) {
+			if (isStarting(part.value, element)) {
+				level--;
+			}
+			if (isEnding(part.value, element)) {
+				level++;
+			}
+			if (level === 0) {
 				return i;
 			}
 		}
@@ -365,6 +385,7 @@ module.exports = {
 	unique,
 	chunkBy,
 	last,
+	first,
 	mergeObjects,
 	xml2str,
 	str2xml,

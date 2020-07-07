@@ -11,7 +11,7 @@ const tagsDocxConfig = {
 describe("Algorithm", function() {
 	Object.keys(fixtures).forEach(function(key) {
 		const fixture = fixtures[key];
-		(fixture.only ? it.only : it)(fixture.it, function() {
+		(fixture.onlySync ? it.only : it)(fixture.it, function() {
 			const doc = makeDocx(key, fixture.content);
 			doc.setOptions(fixture.options);
 			const iModule = inspectModule();
@@ -102,5 +102,35 @@ describe("Algorithm", function() {
 		);
 		cleanRecursive(xmllexed);
 		expect(xmllexed).to.be.deep.equal(fixtures.strangetags.xmllexed);
+	});
+
+	it("should xmlparse selfclosing tag", function() {
+		const xmllexed = Lexer.xmlparse("<w:rPr><w:noProof/></w:rPr>", {
+			text: [],
+			other: ["w:rPr", "w:noProof"],
+		});
+		expect(xmllexed).to.be.deep.equal([
+			{
+				type: "tag",
+				position: "start",
+				text: false,
+				value: "<w:rPr>",
+				tag: "w:rPr",
+			},
+			{
+				type: "tag",
+				position: "selfclosing",
+				text: false,
+				value: "<w:noProof/>",
+				tag: "w:noProof",
+			},
+			{
+				type: "tag",
+				position: "end",
+				text: false,
+				value: "</w:rPr>",
+				tag: "w:rPr",
+			},
+		]);
 	});
 });

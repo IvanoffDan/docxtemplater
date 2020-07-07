@@ -9,6 +9,7 @@ const {
 	isTagEnd,
 	isContent,
 	last,
+	first,
 } = require("./doc-utils");
 const {
 	XTTemplateError,
@@ -16,19 +17,18 @@ const {
 	getLoopPositionProducesInvalidXMLError,
 } = require("./errors");
 
-function lastTagIsOpenTag(array, tag) {
-	if (array.length === 0) {
+function lastTagIsOpenTag(tags, tag) {
+	if (tags.length === 0) {
 		return false;
 	}
-	const lastTag = array[array.length - 1];
-	const innerLastTag = lastTag.tag.substr(1);
+	const innerLastTag = last(tags).tag.substr(1);
 	const innerCurrentTag = tag.substr(2, tag.length - 3);
 	return innerLastTag.indexOf(innerCurrentTag) === 0;
 }
 
-function addTag(array, tag) {
-	array.push({ tag });
-	return array;
+function addTag(tags, tag) {
+	tags.push({ tag });
+	return tags;
 }
 
 function getListXmlElements(parts) {
@@ -81,7 +81,8 @@ function getExpandToDefault(postparsed, pair, expandTags) {
 	if (closingTagCount !== startingTagCount) {
 		return {
 			error: getLoopPositionProducesInvalidXMLError({
-				tag: pair[0].part.value,
+				tag: first(pair).part.value,
+				offset: [first(pair).part.offset, last(pair).part.offset],
 			}),
 		};
 	}
@@ -109,7 +110,7 @@ function getExpandToDefault(postparsed, pair, expandTags) {
 					continue;
 				}
 
-				const firstChunk = chunks[0];
+				const firstChunk = first(chunks);
 				const lastChunk = last(chunks);
 
 				const firstContent = firstChunk.filter(isContent);
@@ -132,8 +133,8 @@ function expandOne(part, postparsed, options) {
 	}
 	let right, left;
 	try {
-		right = getRight(postparsed, expandTo, index);
 		left = getLeft(postparsed, expandTo, index);
+		right = getRight(postparsed, expandTo, index);
 	} catch (rootError) {
 		if (rootError instanceof XTTemplateError) {
 			throwRawTagNotInParagraph({
