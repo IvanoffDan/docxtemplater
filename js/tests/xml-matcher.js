@@ -5,6 +5,8 @@ var xmlMatcher = require("../xml-matcher.js");
 var _require = require("./utils"),
     expect = _require.expect;
 
+var xmlprettify = require("./xml-prettify");
+
 describe("XmlMatcher", function () {
   it("should work with simple tag", function () {
     var matcher = xmlMatcher("<w:t>Text</w:t>", ["w:t"]);
@@ -53,5 +55,17 @@ describe("XmlMatcher", function () {
   it("should not match with no <w:t> ender", function () {
     var matcher = xmlMatcher("<w:t>Text1</w:t>TAG", ["w:t"]);
     expect(matcher.matches.length).to.be.equal(1);
+  });
+});
+describe("XML prettify", function () {
+  it("should sort attributes", function () {
+    var str = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><foo zanc="bar" bar="foo"></foo>';
+    var prettified = xmlprettify(str);
+    expect(prettified).to.equal("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n\t<foo bar=\"foo\" zanc=\"bar\"></foo>\n");
+  });
+  it("should remove space inside tags", function () {
+    var str = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n\t<sst count=\"9\" uniqueCount=\"9\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\n\t\t<si >\n\t\t\t<t xml:space=\"preserve\">Property</t>\n\t\t</si>\n\t\t<si >\n\t\t\t<t xml:space=\"preserve\">0 $</t>\n\t\t</si>\n\t\t<si >\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si />\n\t</sst>";
+    var prettified = xmlprettify(str);
+    expect(prettified).to.equal("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n\t<sst count=\"9\" uniqueCount=\"9\" xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\">Property</t>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\">0 $</t>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si>\n\t\t\t<t xml:space=\"preserve\"/>\n\t\t</si>\n\t\t<si/>\n\t</sst>\n");
   });
 });

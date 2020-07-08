@@ -9,15 +9,44 @@ var _require = require("./utils"),
     createXmlTemplaterDocxNoRender = _require.createXmlTemplaterDocxNoRender,
     cleanRecursive = _require.cleanRecursive;
 
+var printy = require("./printy");
+
 var _require2 = require("lodash"),
     cloneDeep = _require2.cloneDeep;
 
+var expectedPrintedPostParsed = "\n(0)<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><w:document xmlns:wpc=\"http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas\" xmlns:cx=\"http://schemas.microsoft.com/office/drawing/2014/chartex\" xmlns:cx1=\"http://schemas.microsoft.com/office/drawing/2015/9/8/chartex\" xmlns:cx2=\"http://schemas.microsoft.com/office/drawing/2015/10/21/chartex\" xmlns:cx3=\"http://schemas.microsoft.com/office/drawing/2016/5/9/chartex\" xmlns:cx4=\"http://schemas.microsoft.com/office/drawing/2016/5/10/chartex\" xmlns:cx5=\"http://schemas.microsoft.com/office/drawing/2016/5/11/chartex\" xmlns:cx6=\"http://schemas.microsoft.com/office/drawing/2016/5/12/chartex\" xmlns:cx7=\"http://schemas.microsoft.com/office/drawing/2016/5/13/chartex\" xmlns:cx8=\"http://schemas.microsoft.com/office/drawing/2016/5/14/chartex\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:aink=\"http://schemas.microsoft.com/office/drawing/2016/ink\" xmlns:am3d=\"http://schemas.microsoft.com/office/drawing/2017/model3d\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:wp14=\"http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\" xmlns:w16cid=\"http://schemas.microsoft.com/office/word/2016/wordml/cid\" xmlns:w16se=\"http://schemas.microsoft.com/office/word/2015/wordml/symex\" xmlns:wpg=\"http://schemas.microsoft.com/office/word/2010/wordprocessingGroup\" xmlns:wpi=\"http://schemas.microsoft.com/office/word/2010/wordprocessingInk\" xmlns:wne=\"http://schemas.microsoft.com/office/word/2006/wordml\" xmlns:wps=\"http://schemas.microsoft.com/office/word/2010/wordprocessingShape\" mc:Ignorable=\"w14 w15 w16se w16cid wp14\"><w:body>\n***START LOOP OF hi\n(1)   <w:p>\n(2)      <w:r>\n(3)         <w:t xml:space=\"preserve\">\n(3)         </w:t>\n(2)      </w:r>\n(2)      <w:p w14:paraId=\"736A2D9F\" w14:textId=\"77777777\" w:rsidR=\"008E1095\" w:rsidRDefault=\"008E1095\"/>\n(2)      <w:sdt><w:sdtPr><w:alias w:val=\"SF:Table\"/><w:id w:val=\"2039776175\"/><w:placeholder><w:docPart w:val=\"CFCF8C7E6B33489A9DD50D7417AD410D\"/></w:placeholder><w15:color w:val=\"008000\"/><w15:appearance w15:val=\"hidden\"/></w:sdtPr><w:sdtContent>\n(2)      <w:p w14:paraId=\"4800949B\" w14:textId=\"77777777\" w:rsidR=\"00D3440B\" w:rsidRDefault=\"00D3440B\" w:rsidP=\"00D3440B\"/>\n(2)      <w:tbl><w:tblPr><w:tblStyle w:val=\"TableGrid\"/><w:tblW w:w=\"0\" w:type=\"auto\"/><w:tblLook w:val=\"0660\" w:firstRow=\"1\" w:lastRow=\"1\" w:firstColumn=\"0\" w:lastColumn=\"0\" w:noHBand=\"1\" w:noVBand=\"1\"/></w:tblPr><w:tblGrid><w:gridCol w:w=\"2909\"/><w:gridCol w:w=\"2928\"/><w:gridCol w:w=\"2793\"/></w:tblGrid>\n(2)      <w:tr w:rsidR=\"00D3440B\" w14:paraId=\"5887C255\" w14:textId=\"77777777\" w:rsidTr=\"00F617CB\">\n(3)         <w:trPr><w:tblHeader/></w:trPr>\n(3)         <w:tc>\n(4)            <w:tcPr><w:tcW w:w=\"0\" w:type=\"auto\"/></w:tcPr>\n(4)            <w:p w14:paraId=\"5951DD51\" w14:textId=\"77777777\" w:rsidR=\"00D3440B\" w:rsidRDefault=\"00D3440B\" w:rsidP=\"00F617CB\">\n(5)               <w:r>\n(6)                  <w:t xml:space=\"preserve\">\n(7)                     name\n(6)                  </w:t>\n(5)               </w:r>\n(4)            </w:p>\n(3)         </w:tc>\n(3)         <w:tc>\n(4)            <w:tcPr><w:tcW w:w=\"0\" w:type=\"auto\"/></w:tcPr>\n(4)            <w:p w14:paraId=\"34A4528E\" w14:textId=\"77777777\" w:rsidR=\"00D3440B\" w:rsidRDefault=\"00D3440B\" w:rsidP=\"00F617CB\">\n(5)               <w:r>\n(6)                  <w:t xml:space=\"preserve\">\n(7)                     phone\n(6)                  </w:t>\n(5)               </w:r>\n(4)            </w:p>\n(3)         </w:tc>\n(3)         <w:tc>\n(4)            <w:tcPr><w:tcW w:w=\"0\" w:type=\"auto\"/></w:tcPr>\n(4)            <w:p w14:paraId=\"1EFFDB2B\" w14:textId=\"77777777\" w:rsidR=\"00D3440B\" w:rsidRDefault=\"00D3440B\" w:rsidP=\"00F617CB\">\n(5)               <w:r>\n(6)                  <w:t xml:space=\"preserve\">\n(7)                     website\n(6)                  </w:t>\n(5)               </w:r>\n(4)            </w:p>\n(3)         </w:tc>\n(2)      </w:tr>\n(2)      <w:tr w:rsidR=\"00D3440B\" w14:paraId=\"53971E16\" w14:textId=\"77777777\" w:rsidTr=\"00F617CB\">\n(3)         <w:sdt><w:sdtPr><w:alias w:val=\"SF:R\"/><w:id w:val=\"1927457022\"/><w15:color w:val=\"008000\"/><w15:appearance w15:val=\"hidden\"/></w:sdtPr><w:sdtContent>\n(3)         <w:tc>\n(4)            <w:tcPr><w:tcW w:w=\"0\" w:type=\"auto\"/></w:tcPr>\n(4)            <w:p w14:paraId=\"6B371C2E\" w14:textId=\"77777777\" w:rsidR=\"00D3440B\" w:rsidRDefault=\"00D3440B\" w:rsidP=\"00F617CB\">\n(5)               <w:pPr>\n(6)                  <w:spacing w:line=\"360\" w:lineRule=\"auto\"/>\n(6)                  <w:jc w:val=\"both\"/>\n(5)               </w:pPr>\n(5)               <w:r>\n(6)                  <w:t xml:space=\"preserve\">\n========================{foo}\n(6)                  </w:t>\n(5)               </w:r>\n(4)            </w:p>\n(3)         </w:tc>\n(3)         </w:sdtContent></w:sdt><w:sdt><w:sdtPr><w:alias w:val=\"SF:R\"/><w:id w:val=\"1556285925\"/><w15:color w:val=\"008000\"/><w15:appearance w15:val=\"hidden\"/></w:sdtPr><w:sdtContent>\n(3)         <w:tc>\n(4)            <w:tcPr><w:tcW w:w=\"0\" w:type=\"auto\"/></w:tcPr>\n(4)            <w:p w14:paraId=\"3C4100BB\" w14:textId=\"77777777\" w:rsidR=\"00D3440B\" w:rsidRDefault=\"00D3440B\" w:rsidP=\"00F617CB\">\n(5)               <w:pPr>\n(6)                  <w:spacing w:line=\"360\" w:lineRule=\"auto\"/>\n(6)                  <w:jc w:val=\"both\"/>\n(5)               </w:pPr>\n(5)               <w:r>\n(6)                  <w:t xml:space=\"preserve\">\n========================{bar}\n(6)                  </w:t>\n(5)               </w:r>\n(4)            </w:p>\n(3)         </w:tc>\n(3)         </w:sdtContent></w:sdt><w:sdt><w:sdtPr><w:alias w:val=\"SF:R\"/><w:id w:val=\"-788971804\"/><w15:color w:val=\"008000\"/><w15:appearance w15:val=\"hidden\"/></w:sdtPr><w:sdtContent>\n(3)         <w:tc>\n(4)            <w:tcPr><w:tcW w:w=\"0\" w:type=\"auto\"/></w:tcPr>\n(4)            <w:p w14:paraId=\"24C5CEB1\" w14:textId=\"77777777\" w:rsidR=\"00D3440B\" w:rsidRDefault=\"00D3440B\" w:rsidP=\"00F617CB\">\n(5)               <w:pPr>\n(6)                  <w:spacing w:line=\"360\" w:lineRule=\"auto\"/>\n(6)                  <w:jc w:val=\"both\"/>\n(5)               </w:pPr>\n(5)               <w:r>\n(6)                  <w:t xml:space=\"preserve\">\n========================{bar}\n(6)                  </w:t>\n(5)               </w:r>\n(4)            </w:p>\n(3)         </w:tc>\n(3)         </w:sdtContent></w:sdt>\n(2)      </w:tr>\n(2)      </w:tbl>\n(2)      <w:p w14:paraId=\"676A1E43\" w14:textId=\"77777777\" w:rsidR=\"00D3440B\" w:rsidRDefault=\"00D3440B\" w:rsidP=\"00D3440B\"/>\n(2)      </w:sdtContent></w:sdt>\n(2)      <w:p w14:paraId=\"22D858B2\" w14:textId=\"69A6ACE6\" w:rsidR=\"009843AE\" w:rsidRDefault=\"00EB53B3\"/>\n(1)   </w:p>\n(1)   <w:p>\n(2)      <w:r>\n(3)         <w:t xml:space=\"preserve\">\n(3)         </w:t>\n(2)      </w:r>\n(1)   </w:p>\n***END LOOP OF hi\n(0)</w:body></w:document>";
 var raw = "<p:sp>\n  <p:nvSpPr>\n    <p:cNvPr id=\"37\" name=\"CustomShape 2\"/>\n    <p:cNvSpPr/>\n    <p:nvPr/>\n  </p:nvSpPr>\n  <p:spPr>\n    <a:xfrm>\n      <a:off x=\"504000\" y=\"1769040\"/>\n      <a:ext cx=\"9071280\" cy=\"4384080\"/>\n    </a:xfrm>\n    <a:prstGeom prst=\"rect\">\n      <a:avLst/>\n    </a:prstGeom>\n    <a:noFill/>\n    <a:ln>\n      <a:noFill/>\n    </a:ln>\n  </p:spPr>\n  <p:style>\n    <a:lnRef idx=\"0\"/>\n    <a:fillRef idx=\"0\"/>\n    <a:effectRef idx=\"0\"/>\n    <a:fontRef idx=\"minor\"/>\n  </p:style>\n  <p:txBody>\n    <a:bodyPr lIns=\"0\" rIns=\"0\" tIns=\"0\" bIns=\"0\" anchor=\"ctr\"/>\n    <a:p>\n      <a:pPr algn=\"ctr\">\n        <a:lnSpc>\n          <a:spcPct val=\"100000\"/>\n        </a:lnSpc>\n      </a:pPr>\n      <a:r>\n        <a:rPr b=\"0\" lang=\"fr-FR\" sz=\"3200\" spc=\"-1\" strike=\"noStrike\">\n          <a:solidFill>\n            <a:srgbClr val=\"000000\"/>\n          </a:solidFill>\n          <a:uFill>\n            <a:solidFill>\n              <a:srgbClr val=\"ffffff\"/>\n            </a:solidFill>\n          </a:uFill>\n          <a:latin typeface=\"Arial\"/>\n        </a:rPr>\n        <a:t>Hello World</a:t>\n      </a:r>\n      <a:endParaRPr b=\"0\" lang=\"fr-FR\" sz=\"1800\" spc=\"-1\" strike=\"noStrike\">\n        <a:solidFill>\n          <a:srgbClr val=\"000000\"/>\n        </a:solidFill>\n        <a:uFill>\n          <a:solidFill>\n            <a:srgbClr val=\"ffffff\"/>\n          </a:solidFill>\n        </a:uFill>\n        <a:latin typeface=\"Arial\"/>\n      </a:endParaRPr>\n    </a:p>\n  </p:txBody>\n</p:sp>";
 
 var angularParser = require("./angular-parser");
 
 var Errors = require("../errors.js");
 
+describe("Docm/Pptm generation", function () {
+  it("should work with docm", function () {
+    var tags = {
+      user: "John"
+    };
+    var doc = createDoc("docm.docx");
+    doc.setData(tags);
+    doc.render();
+    shouldBeSame({
+      doc: doc,
+      expectedName: "expected-docm.docx"
+    });
+  });
+  it("should work with pptm", function () {
+    var tags = {
+      user: "John"
+    };
+    var doc = createDoc("pptm.pptx");
+    doc.setData(tags);
+    doc.render();
+    shouldBeSame({
+      doc: doc,
+      expectedName: "expected-pptm.pptx"
+    });
+  });
+});
 describe("Pptx generation", function () {
   it("should work with title", function () {
     var doc = createDoc("title-example.pptx");
@@ -301,8 +330,8 @@ describe("Table", function () {
     });
   });
 });
-describe("Dash Loop Testing", function () {
-  it("dash loop ok on simple table -> w:tr", function () {
+describe("Dash Loop", function () {
+  it("should work on simple table -> w:tr", function () {
     var tags = {
       os: [{
         type: "linux",
@@ -325,7 +354,7 @@ describe("Dash Loop Testing", function () {
     var text = doc.getFullText();
     expect(text).to.be.equal(expectedText);
   });
-  it("dash loop ok on simple table -> w:table", function () {
+  it("should work on simple table -> w:table", function () {
     var tags = {
       os: [{
         type: "linux",
@@ -348,7 +377,7 @@ describe("Dash Loop Testing", function () {
     var text = doc.getFullText();
     expect(text).to.be.equal(expectedText);
   });
-  it("dash loop ok on simple list -> w:p", function () {
+  it("should work on simple list -> w:p", function () {
     var tags = {
       os: [{
         type: "linux",
@@ -393,19 +422,43 @@ describe("Templating", function () {
       });
     });
   });
-  it("should be possible to have linebreaks if setting the option", function () {
-    var doc = createDoc("tag-multiline.docx");
+  it("should replace custom properties text", function () {
+    var doc = createDoc("properties.docx");
+    var app = doc.getZip().files["docProps/app.xml"].asText();
+    var core = doc.getZip().files["docProps/core.xml"].asText();
+    expect(app).to.contain("{tag1}");
+    expect(core).to.contain("{tag1}");
+    expect(core).to.contain("{tag2}");
+    expect(core).to.contain("{tag3}");
+    expect(app).to.contain("{tag4}");
+    expect(app).to.contain("{tag5}");
+    expect(core).to.contain("{tag6}");
+    expect(core).to.contain("{tag7}");
+    expect(core).to.contain("{tag8}");
+    expect(app).to.contain("{tag9}");
     doc.setData({
-      description: "The description,\nmultiline"
-    });
-    doc.setOptions({
-      linebreaks: true
-    });
-    doc.render();
-    shouldBeSame({
-      doc: doc,
-      expectedName: "expected-multiline.docx"
-    });
+      tag1: "resolvedvalue1",
+      tag2: "resolvedvalue2",
+      tag3: "resolvedvalue3",
+      tag4: "resolvedvalue4",
+      tag5: "resolvedvalue5",
+      tag6: "resolvedvalue6",
+      tag7: "resolvedvalue7",
+      tag8: "resolvedvalue8",
+      tag9: "resolvedvalue9"
+    }).render();
+    app = doc.getZip().files["docProps/app.xml"].asText();
+    core = doc.getZip().files["docProps/core.xml"].asText();
+    expect(app).to.contain("resolvedvalue1");
+    expect(core).to.contain("resolvedvalue1");
+    expect(core).to.contain("resolvedvalue2");
+    expect(core).to.contain("resolvedvalue3");
+    expect(app).to.contain("resolvedvalue4");
+    expect(app).to.contain("resolvedvalue5");
+    expect(core).to.contain("resolvedvalue6");
+    expect(core).to.contain("resolvedvalue7");
+    expect(core).to.contain("resolvedvalue8");
+    expect(app).to.contain("resolvedvalue9");
   });
   it("should show spaces with linebreak option", function () {
     var doc = createDoc("tag-multiline.docx");
@@ -419,6 +472,22 @@ describe("Templating", function () {
     shouldBeSame({
       doc: doc,
       expectedName: "expected-multiline-indent.docx"
+    });
+  });
+});
+describe("Linebreaks", function () {
+  it("should be possible to have linebreaks if setting the option", function () {
+    var doc = createDoc("tag-multiline.docx");
+    doc.setData({
+      description: "The description,\nmultiline"
+    });
+    doc.setOptions({
+      linebreaks: true
+    });
+    doc.render();
+    shouldBeSame({
+      doc: doc,
+      expectedName: "expected-multiline.docx"
     });
   });
   it("should work with linebreaks without changing the style", function () {
@@ -436,7 +505,9 @@ describe("Templating", function () {
       expectedName: "expected-two-multiline.docx"
     });
   });
-  it("should work with paragraphloop", function () {
+});
+describe("ParagraphLoop", function () {
+  it("should work with docx", function () {
     var doc = createDoc("users.docx");
     doc.setOptions({
       paragraphLoop: true
@@ -449,7 +520,7 @@ describe("Templating", function () {
       expectedName: "expected-users.docx"
     });
   });
-  it("should work with paragraphloop without removing extra text", function () {
+  it("should work without removing extra text", function () {
     var doc = createDoc("paragraph-loops.docx");
     doc.setOptions({
       paragraphLoop: true
@@ -468,7 +539,7 @@ describe("Templating", function () {
       expectedName: "expected-paragraph-loop.docx"
     });
   });
-  it("should work with paragraphloop pptx", function () {
+  it("should work with pptx", function () {
     var doc = createDoc("paragraph-loop.pptx");
     doc.setOptions({
       paragraphLoop: true
@@ -488,6 +559,47 @@ describe("Templating", function () {
     shouldBeSame({
       doc: doc,
       expectedName: "expected-paragraph-loop.pptx"
+    });
+  });
+  it("should not fail when having paragraph in paragraph", function () {
+    var doc = createDoc("regression-par-in-par.docx");
+    var printedPostparsed = [];
+    doc.attachModule({
+      set: function set(obj) {
+        if (obj.inspect && obj.inspect.postparsed) {
+          printedPostparsed.push(printy(obj.inspect.postparsed));
+        }
+      }
+    });
+    doc.setOptions({
+      paragraphLoop: true,
+      parser: function parser() {
+        return {
+          get: function get() {
+            return "foo";
+          }
+        };
+      }
+    });
+    doc.setData({});
+    doc.render();
+    expect(printedPostparsed[8]).to.be.equal(expectedPrintedPostParsed);
+    shouldBeSame({
+      doc: doc,
+      expectedName: "expected-rendered-par-in-par.docx"
+    });
+  });
+  it("should work with spacing at the end", function () {
+    var doc = createDoc("spacing-end.docx");
+    doc.setOptions({
+      paragraphLoop: true
+    });
+    doc.setData({
+      name: "John"
+    }).render();
+    shouldBeSame({
+      doc: doc,
+      expectedName: "expected-spacing-end.docx"
     });
   });
   it("should fail properly when having lexed + postparsed errors", function () {
@@ -554,57 +666,6 @@ describe("Templating", function () {
     };
     var create = doc.render.bind(doc);
     expectToThrow(create, Errors.XTTemplateError, expectedError);
-  });
-  it("should work with spacing at the end", function () {
-    var doc = createDoc("spacing-end.docx");
-    doc.setOptions({
-      paragraphLoop: true
-    });
-    doc.setData({
-      name: "John"
-    }).render();
-    shouldBeSame({
-      doc: doc,
-      expectedName: "expected-spacing-end.docx"
-    });
-  });
-  it("should work with custom properties", function () {
-    var doc = createDoc("properties.docx");
-    var app = doc.getZip().files["docProps/app.xml"].asText();
-    var core = doc.getZip().files["docProps/core.xml"].asText();
-    expect(app).to.contain("{tag1}");
-    expect(core).to.contain("{tag1}");
-    expect(core).to.contain("{tag2}");
-    expect(core).to.contain("{tag3}");
-    expect(app).to.contain("{tag4}");
-    expect(app).to.contain("{tag5}");
-    expect(core).to.contain("{tag6}");
-    expect(core).to.contain("{tag7}");
-    expect(core).to.contain("{tag8}");
-    expect(app).to.contain("{tag9}");
-    doc.setData({
-      tag1: "resolvedvalue1",
-      tag2: "resolvedvalue2",
-      tag3: "resolvedvalue3",
-      tag4: "resolvedvalue4",
-      tag5: "resolvedvalue5",
-      tag6: "resolvedvalue6",
-      tag7: "resolvedvalue7",
-      tag8: "resolvedvalue8",
-      tag9: "resolvedvalue9"
-    }).render();
-    app = doc.getZip().files["docProps/app.xml"].asText();
-    core = doc.getZip().files["docProps/core.xml"].asText();
-    expect(app).to.contain("resolvedvalue1");
-    expect(core).to.contain("resolvedvalue1");
-    expect(core).to.contain("resolvedvalue2");
-    expect(core).to.contain("resolvedvalue3");
-    expect(app).to.contain("resolvedvalue4");
-    expect(app).to.contain("resolvedvalue5");
-    expect(core).to.contain("resolvedvalue6");
-    expect(core).to.contain("resolvedvalue7");
-    expect(core).to.contain("resolvedvalue8");
-    expect(app).to.contain("resolvedvalue9");
   });
 });
 describe("Prefixes", function () {
@@ -824,6 +885,16 @@ describe("Resolver", function () {
     shouldBeSame({
       doc: doc,
       expectedName: "expected-regression-1.docx"
+    });
+  });
+  it("should not regress when having [Content_Types.xml] contain Default instead of Override", function () {
+    var doc = createDoc("with-default-contenttype.docx");
+    doc.compile();
+    doc.setData({});
+    doc.render();
+    shouldBeSame({
+      doc: doc,
+      expectedName: "expected-with-default-contenttype.docx"
     });
   });
   it("should not regress 1 async", function () {

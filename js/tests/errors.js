@@ -11,12 +11,13 @@ var Errors = require("../errors.js");
 
 var _require2 = require("./utils"),
     createXmlTemplaterDocx = _require2.createXmlTemplaterDocx,
+    createXmlTemplaterDocxNoRender = _require2.createXmlTemplaterDocxNoRender,
     wrapMultiError = _require2.wrapMultiError,
     expectToThrow = _require2.expectToThrow,
     expectToThrowAsync = _require2.expectToThrowAsync;
 
 function angularParser(tag) {
-  var expr = expressions.compile(tag.replace(/’/g, "'"));
+  var expr = expressions.compile(tag.replace(/(’|“|”|‘)/g, "'"));
   return {
     get: function get(scope) {
       return expr(scope);
@@ -119,7 +120,8 @@ describe("Compilation errors", function () {
       message: "Unopened loop",
       properties: {
         id: "unopened_loop",
-        xtag: "loop"
+        xtag: "loop",
+        offset: 0
       }
     };
     var create = createXmlTemplaterDocx.bind(null, content);
@@ -132,7 +134,8 @@ describe("Compilation errors", function () {
       message: "Unclosed loop",
       properties: {
         id: "unclosed_loop",
-        xtag: "loop"
+        xtag: "loop",
+        offset: 0
       }
     };
     var create = createXmlTemplaterDocx.bind(null, content);
@@ -168,7 +171,7 @@ describe("Compilation errors", function () {
         }],
         xtag: "myrawtag",
         rootError: {
-          message: 'No tag "w:p" was found at the right'
+          message: 'No tag "w:p" was found at the left'
         }
       }
     };
@@ -265,7 +268,7 @@ describe("Compilation errors", function () {
 });
 describe("Runtime errors", function () {
   it("should fail when customparser fails to execute", function () {
-    var content = "<w:t>{name|upper}</w:t>";
+    var content = "<w:t> {name|upper}</w:t>";
 
     function errorParser() {
       return {
@@ -276,21 +279,79 @@ describe("Runtime errors", function () {
     }
 
     var expectedError = {
-      name: "ScopeParserError",
-      message: "Scope parser execution failed",
+      name: "TemplateError",
+      message: "Multi error",
       properties: {
-        id: "scopeparser_execution_failed",
-        tag: "name|upper",
-        scope: {},
-        rootError: {
-          message: "foo bar"
-        }
+        errors: [{
+          name: "ScopeParserError",
+          message: "Scope parser execution failed",
+          properties: {
+            id: "scopeparser_execution_failed",
+            scope: {},
+            tag: "name|upper",
+            offset: 1,
+            rootError: {
+              message: "foo bar"
+            }
+          }
+        }],
+        id: "multi_error"
       }
     };
     var create = createXmlTemplaterDocx.bind(null, content, {
       parser: errorParser
     });
-    expectToThrow(create, Errors.XTScopeParserError, expectedError);
+    expectToThrow(create, Errors.XTTemplateError, expectedError);
+  });
+  it("should fail when customparser fails to execute on multiple tags", function () {
+    var content = "<w:t>{name|upper} {othername|upper}</w:t>";
+    var count = 0;
+
+    function errorParser() {
+      return {
+        get: function get() {
+          count++;
+          throw new Error("foo ".concat(count));
+        }
+      };
+    }
+
+    var expectedError = {
+      name: "TemplateError",
+      message: "Multi error",
+      properties: {
+        errors: [{
+          name: "ScopeParserError",
+          message: "Scope parser execution failed",
+          properties: {
+            id: "scopeparser_execution_failed",
+            scope: {},
+            tag: "name|upper",
+            rootError: {
+              message: "foo 1"
+            },
+            offset: 0
+          }
+        }, {
+          name: "ScopeParserError",
+          message: "Scope parser execution failed",
+          properties: {
+            id: "scopeparser_execution_failed",
+            scope: {},
+            tag: "othername|upper",
+            rootError: {
+              message: "foo 2"
+            },
+            offset: 13
+          }
+        }],
+        id: "multi_error"
+      }
+    };
+    var create = createXmlTemplaterDocx.bind(null, content, {
+      parser: errorParser
+    });
+    expectToThrow(create, Errors.XTTemplateError, expectedError);
   });
 });
 describe("Internal errors", function () {
@@ -468,7 +529,9 @@ describe("Multi errors", function () {
           message: "Unclosed loop",
           properties: {
             id: "unclosed_loop",
-            xtag: "yum"
+            xtag: "yum",
+            // To test that the offset is present and well calculated
+            offset: 68
           }
         }],
         id: "multi_error"
@@ -523,6 +586,7 @@ describe("Multi errors", function () {
           name: "ScopeParserError",
           message: "Scope parser compilation failed",
           properties: {
+            offset: 0,
             id: "scopeparser_compilation_failed",
             tag: "name++",
             rootError: {
@@ -533,6 +597,7 @@ describe("Multi errors", function () {
           name: "ScopeParserError",
           message: "Scope parser compilation failed",
           properties: {
+            offset: 9,
             id: "scopeparser_compilation_failed",
             tag: "foo|||bang",
             rootError: {
@@ -678,7 +743,7 @@ describe("Multi errors", function () {
             id: "raw_tag_outerxml_invalid",
             xtag: "bang",
             rootError: {
-              message: 'No tag "w:p" was found at the right'
+              message: 'No tag "w:p" was found at the left'
             },
             postparsedLength: 12,
             expandTo: "w:p",
@@ -784,6 +849,7 @@ describe("Multi errors", function () {
           message: 'The position of the loop tags "users" would produce invalid XML',
           properties: {
             tag: "users",
+            offset: [0, 17],
             id: "loop_position_invalid"
           }
         }],
@@ -798,14 +864,15 @@ describe("Multi errors", function () {
 });
 describe("Rendering error", function () {
   it("should show an error when using corrupt characters", function () {
-    var content = "<w:t>{user}</w:t>";
+    var content = "<w:t> {user}</w:t>";
     var expectedError = {
       name: "RenderingError",
       message: "There are some XML corrupt characters",
       properties: {
         id: "invalid_xml_characters",
         value: "\x1C",
-        xtag: "user"
+        xtag: "user",
+        offset: 1
       }
     };
     var create = createXmlTemplaterDocx.bind(null, content, {
@@ -814,7 +881,7 @@ describe("Rendering error", function () {
         user: String.fromCharCode(28)
       }
     });
-    return expectToThrow(create, Errors.RenderingError, expectedError);
+    expectToThrow(create, Errors.XTTemplateError, wrapMultiError(expectedError));
   });
 });
 describe("Async errors", function () {
@@ -834,7 +901,8 @@ describe("Async errors", function () {
         }
       }
     };
-    var doc = createXmlTemplaterDocx(content);
+    var doc = createXmlTemplaterDocxNoRender(content);
+    doc.compile();
 
     function create() {
       return doc.resolveData({

@@ -32,6 +32,8 @@ function startTest() {
   require("./checkbox-table");
 
   require("./checkbox-loops");
+
+  require("./modules");
 }
 
 start();

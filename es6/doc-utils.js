@@ -2,11 +2,8 @@
 
 const { DOMParser, XMLSerializer } = require("xmldom");
 const { throwXmlTagNotFound } = require("./errors");
-<<<<<<< HEAD
 const get = require("lodash/get");
-=======
 const { last, first } = require("./utils");
->>>>>>> fa10731289ee64688aa2771d5271f9b2413614b6
 
 const expressions = require("angular-expressions");
 
