@@ -1,4 +1,5 @@
 const { clone, merge } = require("lodash");
+const angularParser = require("./angular-parser");
 
 const xmlSpacePreserveTag = {
 	type: "tag",
@@ -882,9 +883,6 @@ const fixtures = {
 	error_resolve: {
 		it: "should resolve the data correctly",
 		content: "<w:t>{test}{#test}{label}{/test}{test}</w:t>",
-		lexed: null,
-		parsed: null,
-		postparsed: null,
 		result: '<w:t xml:space="preserve">trueT1true</w:t>',
 		scope: {
 			label: "T1",
@@ -915,13 +913,13 @@ const fixtures = {
 				lIndex: 6,
 			},
 		],
+		lexed: null,
+		parsed: null,
+		postparsed: null,
 	},
 	error_resolve_2: {
 		it: "should resolve 2 the data correctly",
 		content: "<w:t>{^a}{label}{/a}</w:t>",
-		lexed: null,
-		parsed: null,
-		postparsed: null,
 		result: "<w:t/>",
 		scope: {
 			a: true,
@@ -933,14 +931,14 @@ const fixtures = {
 				lIndex: 3,
 			},
 		],
+		lexed: null,
+		parsed: null,
+		postparsed: null,
 	},
 	error_resolve_3: {
 		it: "should resolve 3 the data correctly",
 		content:
 			"<w:t>{#frames}{#true}{label}{#false}{label}{/false}{/true}{#false}{label}{/false}{/frames}</w:t>",
-		lexed: null,
-		parsed: null,
-		postparsed: null,
 		result: '<w:t xml:space="preserve">T1</w:t>',
 		scope: {
 			frames: [
@@ -965,14 +963,14 @@ const fixtures = {
 							value: [
 								[
 									{
-										tag: "false",
-										value: [],
-										lIndex: 12,
-									},
-									{
 										tag: "label",
 										value: "T1",
 										lIndex: 9,
+									},
+									{
+										tag: "false",
+										value: [],
+										lIndex: 12,
 									},
 								],
 							],
@@ -983,6 +981,194 @@ const fixtures = {
 				lIndex: 3,
 			},
 		],
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+	},
+	error_resolve_truthy: {
+		it: "should resolve truthy data correctly",
+		content:
+			"<w:t>{#loop}L{#cond2}{label}{/cond2}{#cond3}{label}{/cond3}{/loop}</w:t>",
+		result: '<w:t xml:space="preserve">Linner</w:t>',
+		scope: {
+			label: "outer",
+			loop: [
+				{
+					cond2: true,
+					label: "inner",
+				},
+			],
+		},
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+		resolved: null,
+	},
+	error_resolve_truthy_multi: {
+		it: "should resolve truthy multi data correctly",
+		content:
+			"<w:t>{#loop}L{#cond2}{label}{/cond2}{#cond3}{label}{/cond3}{/loop}</w:t>",
+		result: '<w:t xml:space="preserve">LinnerLinnerLinnerLouterouter</w:t>',
+		scope: {
+			label: "outer",
+			loop: [
+				{
+					cond2: true,
+					label: "inner",
+				},
+				{
+					cond2: true,
+					label: "inner",
+				},
+				{
+					cond3: true,
+					label: "inner",
+				},
+				{
+					cond2: true,
+					cond3: true,
+				},
+			],
+		},
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+		resolved: null,
+	},
+	async_loop_issue: {
+		it: "should resolve async loop",
+		content: "<w:t>{#loop}{#cond1}{label}{/}{#cond2}{label}{/}{/loop}</w:t>",
+		result: '<w:t xml:space="preserve">innerouterouter</w:t>',
+		scope: {
+			label: "outer",
+			loop: [
+				{
+					cond1: true,
+					label: "inner",
+				},
+				{
+					cond1: true,
+					cond2: true,
+				},
+			],
+		},
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+		resolved: null,
+	},
+	inversed_loop: {
+		it: "should work well with inversed loop",
+		content: "<w:t>{#a}{^b}{label}{/}{/}</w:t>",
+		result: '<w:t xml:space="preserve">hi</w:t>',
+		scope: {
+			a: [{ b: false, label: "hi" }],
+		},
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+		resolved: null,
+	},
+	inversed_loop_nested: {
+		it: "should work well with inversed loop nested",
+		content: "<w:t>{#a}{^b}{^c}{label}{/}{/}{/}</w:t>",
+		result: '<w:t xml:space="preserve">hi</w:t>',
+		scope: {
+			a: [{ b: false, label: "hi" }],
+		},
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+		resolved: null,
+	},
+	inversed_loop_nested_resolved: {
+		it: "should work well with inversed loop nested",
+		content: "<w:t>{#a}{^b}{^c}{label}{/}{/}{/}</w:t>",
+		result: '<w:t xml:space="preserve">hi</w:t>',
+		scope: {
+			label: "outer",
+			a: [{ b: false, label: "hi" }],
+		},
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+		resolved: null,
+	},
+	condition_true_value: {
+		it: "should work well with true value for condition",
+		content:
+			"<w:t>{#cond}{#product.price &gt; 10}high{/}{#product.price &lt;= 10}low{/}{/cond}</w:t>",
+		result: '<w:t xml:space="preserve">low</w:t>',
+		scope: {
+			cond: true,
+			product: {
+				price: 2,
+			},
+		},
+		options: {
+			parser: angularParser,
+		},
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+		resolved: null,
+	},
+	condition_int_value: {
+		it: "should work well with int value for condition",
+		content:
+			"<w:t>{#cond}{#product.price &gt; 10}high{/}{#product.price &lt;= 10}low{/}{/cond}</w:t>",
+		result: '<w:t xml:space="preserve">low</w:t>',
+		scope: {
+			cond: 10,
+			product: {
+				price: 2,
+			},
+		},
+		options: {
+			parser: angularParser,
+		},
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+		resolved: null,
+	},
+	condition_string_value: {
+		it: "should work well with str value for condition",
+		content:
+			"<w:t>{#cond}{#product.price &gt; 10}high{/}{#product.price &lt;= 10}low{/}{/cond}</w:t>",
+		result: '<w:t xml:space="preserve">low</w:t>',
+		scope: {
+			cond: "cond",
+			product: {
+				price: 2,
+			},
+		},
+		options: {
+			parser: angularParser,
+		},
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+		resolved: null,
+	},
+	condition_false_value: {
+		it: "should work well with false value for condition",
+		content:
+			"<w:t>{^cond}{#product.price &gt; 10}high{/}{#product.price &lt;= 10}low{/}{/cond}</w:t>",
+		result: '<w:t xml:space="preserve">low</w:t>',
+		scope: {
+			cond: false,
+			product: {
+				price: 2,
+			},
+		},
+		options: {
+			parser: angularParser,
+		},
+		lexed: null,
+		parsed: null,
+		postparsed: null,
+		resolved: null,
 	},
 };
 

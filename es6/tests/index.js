@@ -14,9 +14,10 @@ function startTest() {
 	require("./speed");
 	require("./lexer-parser-render");
 	require("./integration");
-  require("./doc-props");
+	require("./doc-props");
 	require("./checkbox-table");
 	require("./checkbox-loops");
+	require("./modules");
 }
 
 start();
