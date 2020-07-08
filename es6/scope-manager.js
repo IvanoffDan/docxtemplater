@@ -128,7 +128,7 @@ const ScopeManager = class ScopeManager {
 		// Handle CBX loop scope to equal parent scope
 		if (value instanceof CheckboxList) {
 			for (let i = 0; i < value.list.length; i++) {
-				this.functorIfInverted(!inverted, functor, currentValue, i);
+				this.functorIfInverted(!inverted, functor, last(this.scopeList), i);
 			}
 			return true;
 		}
